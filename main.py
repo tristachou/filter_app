@@ -6,6 +6,8 @@ from pathlib import Path
 import uvicorn
 
 from routers import auth, media, filters, process
+from routers.process import apply_filter_to_media
+from routers.process import apply_filter_to_media
 
 # --- App Initialization --- #
 app = FastAPI(
@@ -42,7 +44,15 @@ def on_startup():
 app.include_router(auth.router, prefix="/api")
 app.include_router(media.router, prefix="/api")
 app.include_router(filters.router, prefix="/api")
-app.include_router(process.router, prefix="/api")
+
+# Manually add the process route to bypass the router object
+app.add_api_route(
+    "/api/process", 
+    apply_filter_to_media, 
+    methods=["POST"], 
+    tags=["Processing"]
+)
+
 
 
 # --- Mount Static Files (Frontend) --- #

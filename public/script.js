@@ -1,209 +1,431 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- CONFIGURATION & STATE ---
-    const API_BASE_URL = 'http://localhost:8000'; // IMPORTANT: Make sure this matches your Python backend!
-    let currentMediaFile = null;
-    let jwtToken = null;
+  // ========================================================================
+  // 1. API CLIENT
+  // ========================================================================
+  // A centralized place to handle all API requests.
+  // It automatically adds the JWT token to the headers.
 
-    // --- DOM ELEMENT SELECTORS ---
-    const loginView = document.getElementById('login-view');
-    const appView = document.getElementById('app-view');
-    const loginForm = document.getElementById('login-form');
-    const loginError = document.getElementById('login-error');
-    const logoutButton = document.getElementById('logout-button');
-    
-    const mediaDropZone = document.getElementById('media-drop-zone');
-    const uploadPrompt = document.getElementById('upload-prompt');
-    const fileInfo = document.getElementById('file-info');
-    const processingState = document.getElementById('processing-state');
-    const resultState = document.getElementById('result-state');
-    const selectedFilenameSpan = document.getElementById('selected-filename');
-    const cancelSelectionButton = document.getElementById('cancel-selection-button');
-    
-    const fileInput = document.getElementById('file-input');
-    const filterBar = document.getElementById('filter-bar');
-    const presetFilterList = document.getElementById('preset-filter-list');
-    const uploadLutBox = document.getElementById('upload-filter-box');
-    const lutInput = document.getElementById('lut-input');
-    
-    const downloadLink = document.getElementById('download-link');
-    
-    const mediaLibraryButton = document.getElementById('media-library-button');
-    const modal = document.getElementById('media-library-modal');
-    const modalCloseButton = document.getElementById('modal-close-button');
-    const userMediaList = document.getElementById('user-media-list');
-    const clearLibraryButton = document.getElementById('clear-library-button');
+  const apiClient = axios.create({
+    baseURL: 'http://localhost:8000', // Make sure this matches your backend!
+  });
 
-    // --- STATE MANAGEMENT ---
-    const updateUIState = (state) => {
-        const states = { initial: uploadPrompt, file_selected: fileInfo, processing: processingState, complete: resultState };
+  apiClient.interceptors.request.use((config) => {
+    const token = localStorage.getItem('jwt_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  }, (error) => {
+    return Promise.reject(error);
+  });
+
+
+  // ========================================================================
+  // 2. APPLICATION STATE & MODULES
+  // ========================================================================
+  // The main App object holds the application's state and initializes modules.
+
+  const App = {
+    token: null,
+    isLibraryOpen: false,
+    isLoading: false,
+
+    init() {
+      console.log('App initializing...');
+      this.token = localStorage.getItem('jwt_token');
+      
+      if (this.token) {
+        this.showAppView();
+      } else {
+        this.showLoginView();
+      }
+      
+      LoginModule.init();
+      AppModule.init(); // Initialize the main app module
+    },
+
+    showLoginView() {
+      document.getElementById('login-view').classList.remove('hidden');
+      document.getElementById('app-view').classList.add('hidden');
+    },
+
+    showAppView() {
+      document.getElementById('login-view').classList.add('hidden');
+      document.getElementById('app-view').classList.remove('hidden');
+      // When showing the app view, we should fetch the filters
+      AppModule.FilterBarModule.fetchFilters();
+    },
+
+    loginSuccess(token) {
+      this.token = token;
+      localStorage.setItem('jwt_token', token);
+      this.showAppView();
+    },
+
+    logout() {
+      this.token = null;
+      localStorage.removeItem('jwt_token');
+      this.showLoginView();
+    }
+  };
+
+
+  // ========================================================================
+  // 3. LOGIN MODULE
+  // ========================================================================
+  // Handles all logic related to the login form.
+
+  const LoginModule = {
+    init() {
+      const loginForm = document.getElementById('login-form');
+      if (loginForm) {
+        loginForm.addEventListener('submit', this.handleLogin.bind(this));
+      }
+    },
+
+    async handleLogin(e) {
+      e.preventDefault();
+      const username = e.target.username.value;
+      const password = e.target.password.value;
+      const errorEl = document.getElementById('login-error');
+      errorEl.textContent = '';
+
+      try {
+        const formData = new URLSearchParams();
+        formData.append('username', username);
+        formData.append('password', password);
+
+        const response = await apiClient.post('/api/auth/token', formData);
+        App.loginSuccess(response.data.access_token);
+
+      } catch (error) {
+        errorEl.textContent = 'Invalid credentials. Please try again.';
+        console.error('Login failed:', error);
+      }
+    }
+  };
+
+
+  // ========================================================================
+  // 4. APP MODULE (Main application logic after login)
+  // ========================================================================
+  // This module will contain all the sub-modules for the main app view.
+
+  const AppModule = {
+    init() {
+      this.HeaderModule.init();
+      this.FilterBarModule.init();
+      this.MediaUploadModule.init();
+      this.MediaLibraryModule.init();
+    },
+
+    // --- Header Sub-Module ---
+    HeaderModule: {
+      init() {
+        const logoutButton = document.getElementById('logout-button');
+        if (logoutButton) {
+          logoutButton.addEventListener('click', () => App.logout());
+        }
+        const mediaLibraryButton = document.getElementById('media-library-button');
+        if (mediaLibraryButton) {
+          mediaLibraryButton.addEventListener('click', () => AppModule.MediaLibraryModule.open());
+        }
+      }
+    },
+
+    // --- Filter Bar Sub-Module ---
+    FilterBarModule: {
+      filters: [],
+      init() {
+        const filterListEl = document.getElementById('preset-filter-list');
+        if (filterListEl) {
+          filterListEl.addEventListener('click', (e) => {
+            const swatch = e.target.closest('.filter-swatch');
+            if (swatch && swatch.dataset.filterId) {
+              // Deselect others
+              document.querySelectorAll('.filter-swatch.selected').forEach(s => s.classList.remove('selected'));
+              // Select clicked one
+              swatch.classList.add('selected');
+              // Notify the MediaUploadModule to start processing
+              AppModule.MediaUploadModule.startProcessing(swatch.dataset.filterId);
+            }
+          });
+        }
+      },
+      async fetchFilters() {
+        try {
+          const response = await apiClient.get('/api/filters/');
+          this.filters = response.data;
+          this.renderFilters();
+        } catch (error) {
+          console.error('Failed to fetch filters:', error);
+          alert('Could not load filters. Please try refreshing the page.');
+        }
+      },
+      renderFilters() {
+        const filterListEl = document.getElementById('preset-filter-list');
+        filterListEl.innerHTML = ''; // Clear existing filters
+        this.filters.forEach(filter => {
+          const swatch = document.createElement('div');
+          swatch.className = 'filter-swatch';
+          // Use the correct property name from the backend (which we fixed earlier)
+          swatch.innerHTML = `<span>${filter.filter_name || filter.name}</span>`; 
+          swatch.dataset.filterId = filter.id;
+          filterListEl.appendChild(swatch);
+        });
+      }
+    },
+
+    // --- Media Upload Sub-Module ---
+    MediaUploadModule: {
+      currentFile: null,
+      init() {
+        const dropZone = document.getElementById('media-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const cancelBtn = document.getElementById('cancel-selection-button');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => this.handleFileSelect(e.target.files[0]));
+        cancelBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.setUIState('initial');
+        });
+
+        // Drag and Drop listeners
+        dropZone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.add('active-drop');
+        });
+        dropZone.addEventListener('dragleave', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.remove('active-drop');
+        });
+        dropZone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.remove('active-drop');
+          this.handleFileSelect(e.dataTransfer.files[0]);
+        });
+      },
+
+      handleFileSelect(file) {
+        if (!file) return;
+        this.currentFile = file;
+        document.getElementById('selected-filename').textContent = file.name;
+        this.setUIState('file_selected');
+      },
+
+      async startProcessing(filterId) {
+        if (!this.currentFile) {
+          alert('Please select a media file first.');
+          return;
+        }
+        this.setUIState('processing');
+
+        try {
+          // 1. Upload the media file
+          const mediaFormData = new FormData();
+          mediaFormData.append('file', this.currentFile);
+          const uploadResponse = await apiClient.post('/api/media/upload', mediaFormData);
+
+          // 2. Start the processing job
+          const processResponse = await apiClient.post('/api/process', {
+            media_id: uploadResponse.data.id,
+            filter_id: filterId,
+          });
+
+          // 3. Download the result
+          const downloadResponse = await apiClient.get(`/api/media/download/${processResponse.data.processed_media_id}`, {
+            responseType: 'blob',
+          });
+          const blob = downloadResponse.data;
+          
+          const downloadLink = document.getElementById('download-link');
+          const blobUrl = URL.createObjectURL(blob);
+
+          // Remove old listeners to prevent duplicates
+          const newDownloadLink = downloadLink.cloneNode(true);
+          downloadLink.parentNode.replaceChild(newDownloadLink, downloadLink);
+
+          newDownloadLink.href = blobUrl;
+          newDownloadLink.download = processResponse.data.processed_filename;
+
+          newDownloadLink.addEventListener('click', (e) => {
+            // We handle the click manually to have more control
+            e.preventDefault();
+            // Create a temporary link to trigger the download
+            const tempLink = document.createElement('a');
+            tempLink.href = blobUrl;
+            tempLink.download = processResponse.data.processed_filename;
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+
+            // After download, reset the UI to the initial state
+            this.setUIState('initial');
+          });
+
+          this.setUIState('complete');
+
+        } catch (error) {
+          console.error('Processing failed:', error);
+          alert(`An error occurred during processing: ${error.response?.data?.detail || error.message}`);
+          this.setUIState('file_selected'); // Revert to file selected state
+        }
+      },
+
+      setUIState(state) {
+        const states = {
+          initial: document.getElementById('upload-prompt'),
+          file_selected: document.getElementById('file-info'),
+          processing: document.getElementById('processing-state'),
+          complete: document.getElementById('result-state'),
+        };
+
+        // Hide all states
         Object.values(states).forEach(el => el.classList.add('hidden'));
-        if (states[state]) states[state].classList.remove('hidden');
+        // Show the target state
+        if (states[state]) {
+          states[state].classList.remove('hidden');
+        }
+
+        // Also manage the filter bar state
+        const filterBar = document.getElementById('filter-bar');
+        if (state === 'file_selected') {
+          filterBar.classList.add('active');
+        } else {
+          filterBar.classList.remove('active');
+        }
 
         if (state === 'initial') {
-            mediaDropZone.classList.add('active-drop');
-            filterBar.classList.remove('active');
-            currentMediaFile = null;
-            fileInput.value = '';
-        } else if (state === 'file_selected') {
-            mediaDropZone.classList.remove('active-drop');
-            filterBar.classList.add('active');
-        } else {
-            mediaDropZone.classList.remove('active-drop');
-            filterBar.classList.remove('active');
+          this.currentFile = null;
+          document.getElementById('file-input').value = '';
         }
-    };
+      }
+    },
 
-    // --- API HELPER ---
-    const apiRequest = async (endpoint, options = {}) => {
-        const headers = { 'Authorization': `Bearer ${jwtToken}`, ...options.headers };
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
-        if (response.status === 401) { handleLogout(); throw new Error('Session expired.'); }
-        if (!response.ok) {
-            const err = await response.json().catch(() => ({ detail: 'An unknown error occurred' }));
-            throw new Error(err.detail);
-        }
-        if (options.responseType === 'blob') return response.blob();
-        return response.json();
-    };
+    // --- Media Library Sub-Module ---
+    MediaLibraryModule: {
+      isOpen: false,
+      mediaItems: [],
+      init() {
+        const openBtn = document.getElementById('media-library-button');
+        const closeBtn = document.getElementById('modal-close-button');
+        const modalOverlay = document.getElementById('media-library-modal');
+        const listEl = document.getElementById('user-media-list');
+        const clearBtn = document.getElementById('clear-library-button');
 
-    // --- CORE LOGIC ---
-    const initializeApp = async () => {
-        loginView.classList.add('hidden');
-        appView.classList.remove('hidden');
-        updateUIState('initial');
-        await fetchAndRenderFilters();
-    };
+        openBtn.addEventListener('click', () => this.open());
+        closeBtn.addEventListener('click', () => this.close());
+        modalOverlay.addEventListener('click', (e) => {
+          if (e.target === modalOverlay) {
+            this.close();
+          }
+        });
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        loginError.textContent = '';
-        const data = new URLSearchParams({ username: e.target.username.value, password: e.target.password.value });
+        listEl.addEventListener('click', (e) => {
+          const downloadBtn = e.target.closest('.download-btn');
+          if (downloadBtn) {
+            e.preventDefault();
+            const mediaId = downloadBtn.dataset.mediaId;
+            const filename = downloadBtn.dataset.filename;
+            this.handleDownload(mediaId, filename);
+          }
+        });
+
+        clearBtn.addEventListener('click', () => this.handleClear());
+      },
+
+      async open() {
+        this.isOpen = true;
+        document.getElementById('media-library-modal').classList.remove('hidden');
+        await this.fetchMedia();
+      },
+
+      close() {
+        this.isOpen = false;
+        document.getElementById('media-library-modal').classList.add('hidden');
+      },
+
+      async fetchMedia() {
+        const listEl = document.getElementById('user-media-list');
+        listEl.innerHTML = '<li>Loading...</li>'; // Show loading indicator
         try {
-            const response = await fetch(`${API_BASE_URL}/api/auth/token`, { method: 'POST', body: data });
-            if (!response.ok) throw new Error('Invalid credentials');
-            const { access_token } = await response.json();
-            jwtToken = access_token;
-            localStorage.setItem('jwt_token', jwtToken);
-            initializeApp();
+          const response = await apiClient.get('/api/media/');
+          this.mediaItems = response.data;
+          this.renderMedia();
         } catch (error) {
-            loginError.textContent = error.message;
+          console.error('Failed to fetch media library:', error);
+          listEl.innerHTML = '<li>Failed to load library.</li>';
         }
-    };
-    
-    const handleLogout = () => {
-        localStorage.removeItem('jwt_token');
-        jwtToken = null;
-        appView.classList.add('hidden');
-        loginView.classList.remove('hidden');
-    };
+      },
 
-    const handleFileSelect = (file) => {
-        if (!file) return;
-        currentMediaFile = file;
-        selectedFilenameSpan.textContent = file.name;
-        updateUIState('file_selected');
-    };
+      renderMedia() {
+        const listEl = document.getElementById('user-media-list');
+        listEl.innerHTML = '';
 
-    const fetchAndRenderFilters = async () => {
+        if (this.mediaItems.length === 0) {
+          listEl.innerHTML = '<li>Your media library is empty.</li>';
+          return;
+        }
+
+        this.mediaItems.forEach(item => {
+          const li = document.createElement('li');
+          li.className = 'media-list-item';
+          li.innerHTML = `
+            <div class="media-item-info">
+              <i class="fas ${item.media_type.startsWith('video') ? 'fa-file-video' : 'fa-file-image'}"></i>
+              <span>${item.original_filename}</span>
+            </div>
+            <a href="#" class="btn btn-primary download-btn" data-media-id="${item.id}" data-filename="${item.original_filename}">Download</a>
+          `;
+          listEl.appendChild(li);
+        });
+      },
+
+      async handleDownload(mediaId, filename) {
         try {
-            const filters = await apiRequest('/api/filters/');
-            presetFilterList.innerHTML = '';
-            filters.forEach(filter => {
-                const swatch = document.createElement('div');
-                swatch.className = 'filter-swatch';
-                swatch.dataset.filterId = filter.id;
-                swatch.innerHTML = `<span>${filter.filter_name}</span>`;
-                presetFilterList.appendChild(swatch);
-            });
-        } catch (error) { console.error('Failed to load filters:', error); }
-    };
-    
-    const startProcessing = async (filterId) => {
-        if (!currentMediaFile) { alert('Please select a media file first.'); return; }
-        updateUIState('processing');
-        try {
-            const mediaFormData = new FormData();
-            mediaFormData.append('file', currentMediaFile);
-            const uploadResponse = await apiRequest('/api/media/upload', { method: 'POST', body: mediaFormData });
-            
-            const processResponse = await apiRequest('/api/process', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ media_id: uploadResponse.id, filter_id: filterId }),
-            });
-            
-            const blob = await apiRequest(`/api/media/download/${processResponse.processed_media_id}`, { responseType: 'blob' });
-            downloadLink.href = URL.createObjectURL(blob);
-            downloadLink.download = processResponse.processed_filename;
-            updateUIState('complete');
+          const response = await apiClient.get(`/api/media/download/${mediaId}`, {
+            responseType: 'blob',
+          });
+          const blob = response.data;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
         } catch (error) {
-            alert(`Processing failed: ${error.message}`);
-            updateUIState('file_selected');
+          console.error('Download failed:', error);
+          alert('Failed to download file.');
         }
-    };
-    
-    const fetchAndShowUserMedia = async () => {
+      },
+
+      async handleClear() {
+        if (!confirm('Are you sure you want to delete your entire media library? This action cannot be undone.')) {
+          return;
+        }
         try {
-            const mediaItems = await apiRequest('/api/media/');
-            userMediaList.innerHTML = '';
-            if (mediaItems.length === 0) {
-                userMediaList.innerHTML = '<li>Your media library is empty.</li>';
-                return;
-            }
-            mediaItems.forEach(item => {
-                const li = document.createElement('li');
-                li.className = 'media-list-item';
-                li.innerHTML = `
-                    <div class="media-item-info">
-                        <i class="fas ${item.media_type.startsWith('video') ? 'fa-file-video' : 'fa-file-image'}"></i>
-                        <span>${item.original_filename}</span>
-                    </div>
-                    <a href="#" class="btn btn-primary" data-media-id="${item.id}" data-filename="${item.original_filename}">Download</a>
-                `;
-                userMediaList.appendChild(li);
-            });
-            modal.classList.remove('hidden');
-        } catch (error) { alert(`Failed to load library: ${error.message}`); }
-    };
-    
-    // --- EVENT LISTENERS ---
-    loginForm.addEventListener('submit', handleLogin);
-    logoutButton.addEventListener('click', handleLogout);
-    
-    mediaDropZone.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
-    cancelSelectionButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        updateUIState('initial');
-    });
-
-    filterBar.addEventListener('click', (e) => {
-        const swatch = e.target.closest('.filter-swatch');
-        if (!swatch || !filterBar.classList.contains('active')) return;
-
-        if (swatch.id === 'upload-filter-box') {
-            lutInput.click();
-            return;
+          await apiClient.delete('/api/media/all');
+          this.mediaItems = [];
+          this.renderMedia();
+        } catch (error) {
+          console.error('Failed to clear library:', error);
+          alert('Failed to clear your media library.');
         }
-
-        document.querySelectorAll('.filter-swatch.selected').forEach(s => s.classList.remove('selected'));
-        swatch.classList.add('selected');
-        startProcessing(swatch.dataset.filterId);
-    });
-
-    mediaLibraryButton.addEventListener('click', fetchAndShowUserMedia);
-    modalCloseButton.addEventListener('click', () => modal.classList.add('hidden'));
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.classList.add('hidden');
-    });
-
-    // --- INITIALIZATION ---
-    jwtToken = localStorage.getItem('jwt_token');
-    if (jwtToken) {
-        initializeApp();
-    } else {
-        loginView.classList.remove('hidden');
-        appView.classList.add('hidden');
+      }
     }
+  };
+
+
+  // ========================================================================
+  // 5. INITIALIZE THE APP
+  // ========================================================================
+  App.init();
+
 });

@@ -25,7 +25,7 @@ class MediaItemInDB(MediaItemBase):
 from typing import Optional
 
 class FilterItemBase(BaseModel):
-    name: str
+    name: str = Field(..., serialization_alias='filter_name')
     storage_path: str
     filter_type: str = "default"
     owner_id: Optional[UUID] = None
