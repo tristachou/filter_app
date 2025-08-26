@@ -36,12 +36,19 @@ async def upload_filter(current_user: Annotated[User, Depends(get_current_user)]
     except IOError as e:
         raise HTTPException(status_code=500, detail=f"Failed to save file: {e}")
 
-    # Create metadata record for the custom filter
+    # Create metadata record for the filter
+    filter_type = 'custom'
+    owner_id = current_user.id
+
+    if current_user.role == "admin":
+        filter_type = "default"
+        owner_id = None
+
     filter_item = FilterItemInDB(
         name=Path(file.filename).stem,
         storage_path=str(storage_path),
-        filter_type='custom',  # Mark as a custom filter
-        owner_id=current_user.id # Assign ownership
+        filter_type=filter_type,
+        owner_id=owner_id
     )
 
     db = load_db()

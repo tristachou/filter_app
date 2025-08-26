@@ -7,6 +7,7 @@ class User(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     username: str
     hashed_password: str
+    role: str = "user"
 
 class Token(BaseModel):
     access_token: str

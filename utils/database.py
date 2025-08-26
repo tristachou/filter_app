@@ -20,8 +20,8 @@ def load_db() -> Dict[str, Any]:
         print("Database file not found. Initializing with default data.")
         # Hardcoded users for initial setup
         users = [
-            {"id": "a7b8b5e0-5c6e-4e8a-9b9a-6a2b3c4d5e6f", "username": "user1", "hashed_password": "fake_password_1"},
-            {"id": "b8c9c6f1-6d7f-5f9b-a0a0-7b3c4d5e6f7g", "username": "user2", "hashed_password": "fake_password_2"},
+            {"id": "a7b8b5e0-5c6e-4e8a-9b9a-6a2b3c4d5e6f", "username": "user1", "hashed_password": "fake_password_1", "role": "admin"},
+            {"id": "b8c9c6f1-6d7f-5f9b-a0a0-7b3c4d5e6f7g", "username": "user2", "hashed_password": "fake_password_2", "role": "user"},
         ]
         db_data = {
             "users": {user["id"]: user for user in users},

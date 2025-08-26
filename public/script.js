@@ -118,6 +118,43 @@ document.addEventListener('DOMContentLoaded', () => {
       this.FilterBarModule.init();
       this.MediaUploadModule.init();
       this.MediaLibraryModule.init();
+
+      const lutInput = document.getElementById('lut-input');
+      if (lutInput) {
+        lutInput.addEventListener('change', (e) => this.handleLutUpload(e.target.files[0]));
+      }
+      const uploadFilterBox = document.getElementById('upload-filter-box');
+      if (uploadFilterBox && lutInput) {
+        uploadFilterBox.addEventListener('click', () => {
+          lutInput.click();
+        });
+      }
+    },
+
+    async handleLutUpload(file) {
+      if (!file) return;
+      if (!file.name.endsWith('.cube')) {
+        alert('Only .cube LUT files are supported.');
+        return;
+      }
+
+      App.isLoading = true;
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        await apiClient.post('/api/filters/upload', formData);
+        alert('LUT uploaded successfully!');
+        // Re-fetch filters to update the list with the new LUT
+        this.FilterBarModule.fetchFilters();
+      } catch (error) {
+        console.error('LUT upload failed:', error);
+        alert(`Failed to upload LUT: ${error.response?.data?.detail || error.message}`);
+      } finally {
+        App.isLoading = false;
+        // Clear the file input to allow re-uploading the same file
+        document.getElementById('lut-input').value = '';
+      }
     },
 
     // --- Header Sub-Module ---
