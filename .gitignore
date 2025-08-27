@@ -1,4 +1,30 @@
-/.env
-/.venv
-/__pycache__
-/storage/
+# Environment Variables
+# Ignore .env files in all directories, but not the example file.
+.env
+.env.*
+!.env.example
+
+# Python
+# Ignore virtual environments, including the one in the backend folder.
+.venv/
+backend/.venv/
+
+# Ignore bytecode and cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore testing artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Storage
+# Ignore user-uploaded and processed media
+storage/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store

@@ -9,133 +9,124 @@ This is a web application that allows users to upload images and videos, apply c
 -   **User Authentication**: Secure login and session management using JWT.
 -   **Media Upload**: Upload images (JPG, PNG) and videos (MP4, MOV, AVI, MKV).
 -   **Filter Application**: Apply pre-defined or custom `.cube` LUT filters to uploaded media.
--   **CPU-Intensive Processing**: Utilizes `ffmpeg` for media processing, which can be CPU-intensive, especially for video files.
+-   **CPU-Intensive Processing**: Utilizes `ffmpeg` for media processing.
 -   **Media Library**: View, download, and clear a personal library of processed media.
 -   **RESTful API**: A clear and well-defined RESTful API as the primary interface.
--   **Web Client**: A responsive web-based client accessible via a browser, interacting with all API endpoints.
+-   **Modern Web Client**: A responsive React-based client that interacts with all API endpoints.
 
-## Architecture
+## Project Structure
 
-The project is structured as a Single-Page Application (SPA) with a Python FastAPI backend and a vanilla JavaScript frontend.
+The project has been refactored into a modern monorepo structure with a separate backend and frontend.
 
-### Backend (FastAPI)
-
--   **`main.py`**: The main entry point, setting up the FastAPI application and including API routers.
--   **`routers/`**: Contains modular API endpoints for `auth`, `media`, `filters`, and `process`.
--   **`models/schemas.py`**: Defines Pydantic models for data validation and serialization.
--   **`utils/database.py`**: A simple JSON-based database (`db.json`) for storing user, media, and filter metadata.
--   **`services/process_media.py`**: Handles the core media processing logic using `ffmpeg`.
--   **`storage/`**: Stores uploaded raw media, filter files, and processed output.
-
-### Frontend (Vanilla JavaScript)
-
--   **`public/index.html`**: The main HTML structure for the application.
--   **`public/script.js`**: Contains the core JavaScript logic for UI interaction, API communication, and state management, organized into modular components.
--   **`public/style.css`**: Provides the styling for the application.
+-   **`backend/`**: Contains the Python FastAPI application, which handles all API logic, media processing, and database interactions.
+-   **`frontend/`**: Contains the React + Vite application, which serves as the user interface.
+-   **`docker-compose.yml`**: Defines the services, networks, and volumes for running the entire application with Docker.
+-   **`.env`**: A file (that you will create) to hold environment variables for the backend service.
 
 ## Prerequisites
 
 Before you begin, ensure you have the following installed:
 
--   **Python 3.9+**
--   **pip** (Python package installer)
--   **Node.js & npm** (for frontend dependencies, though not strictly used for build process in vanilla JS)
+-   **Python 3.9+** & **pip** (for manual backend setup)
+-   **Node.js 20+** & **npm** (for manual frontend setup)
+-   **Docker** & **Docker Compose** (for the recommended setup)
 -   **ffmpeg**: Essential for media processing. Ensure it's installed and accessible in your system's PATH.
-    -   *For Ubuntu/Debian*: `sudo apt update && sudo apt install ffmpeg`
-    -   *For macOS (using Homebrew)*: `brew install ffmpeg`
-    -   *For Windows*: Download from [ffmpeg.org](https://ffmpeg.org/download.html) and add to PATH.
--   **Docker** (if you plan to run the application via Docker containers)
 
-## Setup & Running Locally
+## How to Run the Application
 
-Follow these steps to set up and run the application on your local machine:
+There are two ways to run the application. The recommended method for ease of use is with Docker Compose.
 
-1.  **Clone the repository**:
+### Method 1: Using Docker Compose (Recommended)
+
+This method runs both the backend and frontend in isolated Docker containers.
+
+1.  **Set up Environment Variables**:
+    Create a file named `.env` in the project root directory by copying the example file:
     ```bash
-    git clone <your-repository-url>
-    cd SimpleGrading/filter_app
+    cp .env.example .env
     ```
+    *Note: The default values in this file are for development only.*
 
-2.  **Create a Python virtual environment** (recommended):
+2.  **Build and Run the Containers**:
+    From the project root directory, run:
     ```bash
-    python -m venv .venv
-    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+    docker-compose up --build
     ```
+    This command will build the images for both services and start them. Be patient, as the first build can take several minutes.
 
-3.  **Install Python dependencies**:
+3.  **Access the Application**:
+    -   The **Frontend** will be available at: `http://localhost:5173`
+    -   The **Backend API** will be available at: `http://localhost:8000`
+    -   API documentation (Swagger UI) is at: `http://localhost:8000/docs`
+
+### Method 2: Running Services Manually (for Development)
+
+Follow these steps to run each service in a separate terminal.
+
+#### Running the Backend
+
+1.  **Navigate to the backend directory**:
+    ```bash
+    cd backend
+    ```
+2.  **Create and activate a virtual environment**:
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows: .venv\Scripts\activate
+    ```
+3.  **Install dependencies**:
     ```bash
     pip install -r requirements.txt
     ```
+4.  **Set environment variables**:
+    The backend requires the environment variables defined in the `.env` file at the project root. You can either load them into your shell manually or run the server from the root directory. The simplest way is to ensure the `.env` file exists at the project root.
 
-4.  **Run the FastAPI backend**:
+5.  **Run the FastAPI server**:
     ```bash
     uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     ```
-    The backend API will be accessible at `http://localhost:8000/api`.
 
-5.  **Access the Frontend**: Open your web browser and navigate to `http://localhost:8000`.
+#### Running the Frontend
 
-    *Default Login Credentials (for initial setup)*:
-    -   Username: `user1`
-    -   Password: `fake_password_1`
-
-## Docker Setup
-
-To run the application using Docker:
-
-1.  **Build the Docker image**:
-    Navigate to the project root directory (where `Dockerfile` is located) and run:
+1.  **Navigate to the frontend directory** (in a new terminal):
     ```bash
-    docker build -t web-filter-app .
+    cd frontend
     ```
-
-2.  **Run the Docker container**:
+2.  **Install dependencies**:
     ```bash
-    docker run -p 8000:8000 web-filter-app
+    npm install
     ```
-    The application will be accessible at `http://localhost:8000`.
+3.  **Run the Vite development server**:
+    ```bash
+    npm run dev
+    ```
+    The frontend will be accessible at `http://localhost:5173`.
 
 ## Usage
 
-1.  **Login**: Use the default credentials to log in.
-2.  **Upload Media**: Click or drag-and-drop an image or video file into the designated area.
-3.  **Apply Filter**: Select a filter from the bar at the bottom. The application will process the media.
+1.  **Login**: Use the default credentials (`user1` / `fake_password_1`) to log in.
+2.  **Upload Media**: Click or drag-and-drop an image or video file.
+3.  **Apply Filter**: Select a filter from the bar at the bottom.
 4.  **Download Result**: Once processing is complete, download the filtered media.
-5.  **My Library**: Access your personal media library from the top right corner to view and download previously processed files, or clear your library.
+5.  **My Library**: Access your personal media library to view, download, or clear files.
 
 ## Assignment Criteria Status
 
-Here's an assessment of the project's current status against the provided assignment criteria:
+(This section is preserved from the original README for your reference)
 
 ### Core criteria (20 marks)
-
 -   [x] **CPU Intensive task (3 marks)**
-    -   Uses at least one CPU intensive process (ffmpeg for media processing).
-    -   *Needs verification*: Exceeding 80% CPU usage for an extended time depends on media size and system specs, requires load testing.
 -   [ ] **CPU load testing (2 marks)**
-    -   *Missing*: A dedicated script or manual method for generating server load.
 -   [x] **Data types (3 marks)**
-    -   Stores media files (images/videos), filter files (.cube), and metadata in JSON (db.json).
 -   [ ] **Containerize the app (3 marks)**
-    -   *Missing*: Docker image is built, but deployment to AWS ECR/EC2 is not part of this setup.
 -   [ ] **Deploy the container (3 marks)**
-    -   *Missing*: Deployment to AWS ECR/EC2 is not part of this setup.
 -   [x] **REST API (3 marks)**
-    -   Application has a clear REST-based API as its primary interface.
 -   [x] **User login (3 marks)**
-    -   Basic user login and session management with JWT, with distinctions for different users.
 
 ### Additional criteria (10 marks)
-
 -   [ ] **Extended API features (2.5 marks)**
-    -   *Missing*: Features like versioning, pagination, filtering, or sorting are not implemented.
 -   [ ] **External APIs (2.5 marks)**
-    -   *Missing*: The application does not use any external APIs.
 -   [x] **Additional types of data (2.5 marks)**
-    -   Handles various media formats (image/video) and LUT files, demonstrating diverse data handling and manipulation.
 -   [x] **Custom processing (2.5 marks)**
-    -   Significant custom processing implemented in the CPU-intensive media filtering (ffmpeg command construction and integration).
 -   [ ] **Infrastructure as code (2.5 marks)**
-    -   *Missing*: While Dockerfile is provided, extensive use of IaC tools like Docker Compose, CloudFormation, or CDK is not present.
 -   [x] **Web client (2.5 marks)**
-    -   Includes a web client that interfaces with all implemented API endpoints.

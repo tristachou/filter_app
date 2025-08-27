@@ -1,0 +1,17 @@
+# Git
+.git
+.gitignore
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Node
+node_modules/
+npm-debug.log

@@ -1,4 +1,9 @@
 
+from dotenv import load_dotenv
+
+# Load environment variables from .env file in the parent directory
+load_dotenv()
+
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -55,9 +60,7 @@ app.add_api_route(
 
 
 
-# --- Mount Static Files (Frontend) --- #
-# This must be placed AFTER the API routes
-app.mount("/", StaticFiles(directory="public", html=True), name="static")
+
 
 
 # --- Main Entry Point for Development --- #

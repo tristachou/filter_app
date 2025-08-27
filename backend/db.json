@@ -1,0 +1,26 @@
+{
+    "users": {
+        "a7b8b5e0-5c6e-4e8a-9b9a-6a2b3c4d5e6f": {
+            "id": "a7b8b5e0-5c6e-4e8a-9b9a-6a2b3c4d5e6f",
+            "username": "user1",
+            "hashed_password": "fake_password_1",
+            "role": "admin"
+        },
+        "b8c9c6f1-6d7f-5f9b-a0a0-7b3c4d5e6f7f": {
+            "id": "b8c9c6f1-6d7f-5f9b-a0a0-7b3c4d5e6f7f",
+            "username": "user2",
+            "hashed_password": "fake_password_2",
+            "role": "user"
+        }
+    },
+    "media_items": {},
+    "filter_items": {
+        "00b3057f-9592-41ac-b70b-8209eca66a3c": {
+            "name": "CINECOLOR_GOLDEN_HOUR",
+            "storage_path": "storage/filter_uploads/7aa8b62d-793a-4257-9b48-de32548130ac.cube",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "00b3057f-9592-41ac-b70b-8209eca66a3c"
+        }
+    }
+}
