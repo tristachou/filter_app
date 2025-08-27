@@ -1,0 +1,62 @@
+{
+    "users": {
+        "a7b8b5e0-5c6e-4e8a-9b9a-6a2b3c4d5e6f": {
+            "id": "a7b8b5e0-5c6e-4e8a-9b9a-6a2b3c4d5e6f",
+            "username": "admin",
+            "hashed_password": "password"
+        },
+        "b8c9c6f1-6d7f-5f9b-a0a0-7b3c4d5e6f7g": {
+            "id": "b8c9c6f1-6d7f-5f9b-a0a0-7b3c4d5e6f7g",
+            "username": "user1",
+            "hashed_password": "fake_password_1"
+        }
+    },
+    "media_items": {
+        "da1d962a-aa30-47a4-b7ed-e33a4fd778bf": {
+            "owner_id": "a7b8b5e0-5c6e-4e8a-9b9a-6a2b3c4d5e6f",
+            "original_filename": "source_lut1.JPG",
+            "storage_path": "storage/media_uploads/374c6027-332f-4f4f-96d9-7cf7f8b3e1ae.JPG",
+            "media_type": "image/jpeg",
+            "upload_timestamp": "2025-08-26 02:21:15.123356",
+            "id": "da1d962a-aa30-47a4-b7ed-e33a4fd778bf"
+        },
+        "e9827118-992c-4ad2-bbb9-ff329ba68a50": {
+            "owner_id": "a7b8b5e0-5c6e-4e8a-9b9a-6a2b3c4d5e6f",
+            "original_filename": "source_lut1_processed.JPG",
+            "storage_path": "storage/processed_output/processed_ef2dc0ec-2203-46e8-b583-b523a2a5ee6e.JPG",
+            "media_type": "image/jpeg",
+            "upload_timestamp": "2025-08-26 02:21:15.251543",
+            "id": "e9827118-992c-4ad2-bbb9-ff329ba68a50"
+        }
+    },
+    "filter_items": {
+        "37e90e72-5694-48e2-8d43-56e7d2f1dcd8": {
+            "name": "DOC_01",
+            "storage_path": "storage/filter_uploads/c7d2fa34-be9b-41a2-abb8-42927eddbc6c.cube",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "37e90e72-5694-48e2-8d43-56e7d2f1dcd8"
+        },
+        "b114320f-ded1-44f3-ae02-0cd5660bfb91": {
+            "name": "final_correct_look",
+            "storage_path": "storage/filter_uploads/cb5cadbf-be48-46bc-a192-ca9d9a137b11.cube",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "b114320f-ded1-44f3-ae02-0cd5660bfb91"
+        },
+        "c80d960d-eeb6-4439-aa3a-4b238b485fe6": {
+            "name": "generated_look",
+            "storage_path": "storage/filter_uploads/40d5739e-fa09-4ea6-8ecf-1e8fb5297d13.cube",
+            "filter_type": "custom",
+            "owner_id": "a7b8b5e0-5c6e-4e8a-9b9a-6a2b3c4d5e6f",
+            "id": "c80d960d-eeb6-4439-aa3a-4b238b485fe6"
+        },
+        "3c4464cf-83f5-4d46-bcec-24cf92e34d5e": {
+            "name": "CINECOLOR_GOLDEN_HOUR",
+            "storage_path": "storage/filter_uploads/1dc8e507-7b2d-4644-b913-40cf20929365.cube",
+            "filter_type": "custom",
+            "owner_id": "a7b8b5e0-5c6e-4e8a-9b9a-6a2b3c4d5e6f",
+            "id": "3c4464cf-83f5-4d46-bcec-24cf92e34d5e"
+        }
+    }
+}
