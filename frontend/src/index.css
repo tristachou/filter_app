@@ -411,3 +411,32 @@ p { color: var(--text-secondary); line-height: 1.5; }
   width: 100%;
   padding: 16px 0; /* 調整內距 */
 }
+
+/* index.css */
+
+.search-type-toggle {
+  display: flex;
+  gap: 8px;
+  padding: 0 24px 16px 24px; /* 放在 modal-body 的 padding 外面 */
+  border-bottom: 1px solid var(--border-color);
+}
+
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 2rem;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.search-result-item:hover .video-overlay {
+  opacity: 1;
+}

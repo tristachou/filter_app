@@ -15,10 +15,6 @@ function AppView({ handleLogout }) {
   const [mediaItems, setMediaItems] = useState([]);
 
   const [searchQuery, setSearchQuery] = useState('');      // 儲存搜尋框中的文字
-  const [searchResults, setSearchResults] = useState([]);  // 儲存從後端 API 拿到的圖片結果
-  const [isSearching, setIsSearching] = useState(false);   // 追蹤是否正在載入搜尋結果
-  const [searchError, setSearchError] = useState(null);    // 儲存搜尋時的錯誤訊息
-
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
   const fetchFilters = useCallback(async () => {
@@ -171,6 +167,27 @@ function AppView({ handleLogout }) {
     }
   };
 
+  const handlePexelsVideoSelect = async (video) => {
+    setUiState('processing');
+    
+    try {
+      // 找到畫質最好的 mp4 檔案
+      const videoFile = video.video_files.find(f => f.quality === 'hd') || video.video_files[0];
+      const response = await fetch(videoFile.link);
+      const blob = await response.blob();
+      
+      const videoFileObject = new File([blob], `${video.id}.mp4`, { type: 'video/mp4' });
+      
+      handleFileSelect(videoFileObject); // ✨ 再次重用你現有的核心流程！
+
+    } catch (error) {
+      console.error("Failed to load Pexels video:", error);
+      alert("Failed to load the selected video.");
+      resetState();
+    }
+  };
+  
+
   const handleClearLibrary = async () => {
     if (!window.confirm('Are you sure you want to delete your entire media library? This action cannot be undone.')) {
       return;
@@ -303,7 +320,8 @@ function AppView({ handleLogout }) {
         isOpen={isSearchModalOpen}
         initialQuery={searchQuery}
         onClose={() => setIsSearchModalOpen(false)}
-        onImageSelect={handlePexelsImageSelect} // 我們會重用這個函式！
+        onImageSelect={handlePexelsImageSelect} 
+        onVideoSelect={handlePexelsVideoSelect}
       />
     </div>
   );
