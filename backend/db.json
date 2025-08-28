@@ -13,14 +13,376 @@
             "role": "user"
         }
     },
-    "media_items": {},
+    "media_items": {
+        "928e5f93-b495-4ed2-af11-91e5d6d06bd4": {
+            "owner_id": "a7b8b5e0-5c6e-4e8a-9b9a-6a2b3c4d5e6f",
+            "original_filename": "45201.jpg",
+            "storage_path": "storage/media_uploads/3f8e5997-b094-4c39-ba63-1b6325a3b5f6.jpg",
+            "media_type": "image/jpeg",
+            "upload_timestamp": "2025-08-28 06:06:56.957390",
+            "id": "928e5f93-b495-4ed2-af11-91e5d6d06bd4"
+        },
+        "ce7737e7-35c0-4527-b716-156442f9a15a": {
+            "owner_id": "a7b8b5e0-5c6e-4e8a-9b9a-6a2b3c4d5e6f",
+            "original_filename": "45201_processed.jpg",
+            "storage_path": "storage/processed_output/processed_5a278027-a3de-4ce2-bbe0-4920fdd325d2.jpg",
+            "media_type": "image/jpeg",
+            "upload_timestamp": "2025-08-28 06:06:57.507305",
+            "id": "ce7737e7-35c0-4527-b716-156442f9a15a"
+        },
+        "4fa16575-1371-44f9-b341-1afd8343fb42": {
+            "owner_id": "a7b8b5e0-5c6e-4e8a-9b9a-6a2b3c4d5e6f",
+            "original_filename": "1741205.jpg",
+            "storage_path": "storage/media_uploads/82185343-e0be-43ac-97b2-1df903b0df8e.jpg",
+            "media_type": "image/jpeg",
+            "upload_timestamp": "2025-08-28 06:21:17.091516",
+            "id": "4fa16575-1371-44f9-b341-1afd8343fb42"
+        },
+        "25af26b4-3469-4e1c-aa1b-2bf6031e1c52": {
+            "owner_id": "a7b8b5e0-5c6e-4e8a-9b9a-6a2b3c4d5e6f",
+            "original_filename": "1741205_processed.jpg",
+            "storage_path": "storage/processed_output/processed_2bba0254-6763-4e33-a9a7-99ee0a116c18.jpg",
+            "media_type": "image/jpeg",
+            "upload_timestamp": "2025-08-28 06:21:17.760538",
+            "id": "25af26b4-3469-4e1c-aa1b-2bf6031e1c52"
+        }
+    },
     "filter_items": {
-        "00b3057f-9592-41ac-b70b-8209eca66a3c": {
-            "name": "CINECOLOR_GOLDEN_HOUR",
-            "storage_path": "storage/filter_uploads/7aa8b62d-793a-4257-9b48-de32548130ac.cube",
+        "453be88d-7488-4b1c-9fea-f58090c72a56": {
+            "name": "Pasadena 21",
+            "storage_path": "assets/luts/Pasadena 21.CUBE",
             "filter_type": "default",
             "owner_id": null,
-            "id": "00b3057f-9592-41ac-b70b-8209eca66a3c"
+            "id": "453be88d-7488-4b1c-9fea-f58090c72a56"
+        },
+        "b5104878-4883-45b6-ab5a-9a4b6150f7c9": {
+            "name": "SoftBlackAndWhite",
+            "storage_path": "assets/luts/SoftBlackAndWhite.cube",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "b5104878-4883-45b6-ab5a-9a4b6150f7c9"
+        },
+        "98d9e97b-8117-4bd6-8ddd-1b5b56aa2d2d": {
+            "name": "Clouseau 54",
+            "storage_path": "assets/luts/Clouseau 54.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "98d9e97b-8117-4bd6-8ddd-1b5b56aa2d2d"
+        },
+        "89c141d1-6a84-42c5-808c-5c32baaffbba": {
+            "name": "NaturalBoost",
+            "storage_path": "assets/luts/NaturalBoost.cube",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "89c141d1-6a84-42c5-808c-5c32baaffbba"
+        },
+        "5689d966-9e90-49f4-945c-b4782866384b": {
+            "name": "Faded 47",
+            "storage_path": "assets/luts/Faded 47.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "5689d966-9e90-49f4-945c-b4782866384b"
+        },
+        "08cf63c7-9f82-4463-9105-818182db00f6": {
+            "name": "Zed 32",
+            "storage_path": "assets/luts/Zed 32.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "08cf63c7-9f82-4463-9105-818182db00f6"
+        },
+        "95a1b512-63e4-460a-9a7a-2f8e51165e7c": {
+            "name": "HardBoost",
+            "storage_path": "assets/luts/HardBoost.cube",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "95a1b512-63e4-460a-9a7a-2f8e51165e7c"
+        },
+        "d1701ca8-184e-4300-8300-17c23500ed8f": {
+            "name": "CrispAutumn",
+            "storage_path": "assets/luts/CrispAutumn.cube",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "d1701ca8-184e-4300-8300-17c23500ed8f"
+        },
+        "dbf3b9bd-6ce3-4157-a565-87dd911482f7": {
+            "name": "Chemical 168",
+            "storage_path": "assets/luts/Chemical 168.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "dbf3b9bd-6ce3-4157-a565-87dd911482f7"
+        },
+        "7d4523cc-e676-4ebb-9044-0c0419572709": {
+            "name": "LushGreen",
+            "storage_path": "assets/luts/LushGreen.cube",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "7d4523cc-e676-4ebb-9044-0c0419572709"
+        },
+        "b7345644-b75c-4030-b32a-a40692efad6f": {
+            "name": "Fusion 88",
+            "storage_path": "assets/luts/Fusion 88.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "b7345644-b75c-4030-b32a-a40692efad6f"
+        },
+        "80c6bbb5-7dea-434d-af7a-14282fe6abf1": {
+            "name": "Paladin 1875",
+            "storage_path": "assets/luts/Paladin 1875.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "80c6bbb5-7dea-434d-af7a-14282fe6abf1"
+        },
+        "32c146c0-be72-43ef-a561-8a5fb7de7cdd": {
+            "name": "BlueArchitecture",
+            "storage_path": "assets/luts/BlueArchitecture.cube",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "32c146c0-be72-43ef-a561-8a5fb7de7cdd"
+        },
+        "93fb9471-da4b-495e-a983-b1429aea902f": {
+            "name": "BlueHour",
+            "storage_path": "assets/luts/BlueHour.cube",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "93fb9471-da4b-495e-a983-b1429aea902f"
+        },
+        "495c03d7-0f2b-450c-a904-145f21e1c5a3": {
+            "name": "Cubicle 99",
+            "storage_path": "assets/luts/Cubicle 99.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "495c03d7-0f2b-450c-a904-145f21e1c5a3"
+        },
+        "aebbcd9d-2b19-47a4-a107-2400e76d9039": {
+            "name": "Folger 50",
+            "storage_path": "assets/luts/Folger 50.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "aebbcd9d-2b19-47a4-a107-2400e76d9039"
+        },
+        "3474d0a9-5f4d-4f59-a293-2fd3a2d19e20": {
+            "name": "Clayton 33",
+            "storage_path": "assets/luts/Clayton 33.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "3474d0a9-5f4d-4f59-a293-2fd3a2d19e20"
+        },
+        "d23c5149-a2e7-4887-91d1-9ad40efec159": {
+            "name": "DarkAndSomber",
+            "storage_path": "assets/luts/DarkAndSomber.cube",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "d23c5149-a2e7-4887-91d1-9ad40efec159"
+        },
+        "616540b8-d08f-4212-9251-720552e6b5ec": {
+            "name": "LongBeachMorning",
+            "storage_path": "assets/luts/LongBeachMorning.cube",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "616540b8-d08f-4212-9251-720552e6b5ec"
+        },
+        "617153cd-b120-4416-930e-8311ec9e72c6": {
+            "name": "Lucky 64",
+            "storage_path": "assets/luts/Lucky 64.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "617153cd-b120-4416-930e-8311ec9e72c6"
+        },
+        "65c466d1-c920-4def-be82-602a53a24694": {
+            "name": "Hyla 68",
+            "storage_path": "assets/luts/Hyla 68.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "65c466d1-c920-4def-be82-602a53a24694"
+        },
+        "e6d9ed9f-61b2-45e9-b945-b09b7085f838": {
+            "name": "Domingo 145",
+            "storage_path": "assets/luts/Domingo 145.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "e6d9ed9f-61b2-45e9-b945-b09b7085f838"
+        },
+        "53ac7f15-7bed-4dcf-b2a7-9d66a540d502": {
+            "name": "Django 25",
+            "storage_path": "assets/luts/Django 25.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "53ac7f15-7bed-4dcf-b2a7-9d66a540d502"
+        },
+        "dce44d8a-ce78-4baf-8b63-7ebb92f51cd1": {
+            "name": "Azrael 93",
+            "storage_path": "assets/luts/Azrael 93.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "dce44d8a-ce78-4baf-8b63-7ebb92f51cd1"
+        },
+        "8f8143d1-648d-41b6-83ab-e4369cd1be7f": {
+            "name": "Ava 614",
+            "storage_path": "assets/luts/Ava 614.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "8f8143d1-648d-41b6-83ab-e4369cd1be7f"
+        },
+        "8df88057-4841-4e8b-a4c0-86f640828b39": {
+            "name": "Cobi 3",
+            "storage_path": "assets/luts/Cobi 3.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "8df88057-4841-4e8b-a4c0-86f640828b39"
+        },
+        "cd9925d7-5f64-4bf8-867c-a98117dd3407": {
+            "name": "Zeke 39",
+            "storage_path": "assets/luts/Zeke 39.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "cd9925d7-5f64-4bf8-867c-a98117dd3407"
+        },
+        "f49d5d45-6c0a-4edd-9503-fa826d0e62a9": {
+            "name": "ColdChrome",
+            "storage_path": "assets/luts/ColdChrome.cube",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "f49d5d45-6c0a-4edd-9503-fa826d0e62a9"
+        },
+        "82352c8e-bacb-495c-9391-965cf2d4a257": {
+            "name": "Lenox 340",
+            "storage_path": "assets/luts/Lenox 340.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "82352c8e-bacb-495c-9391-965cf2d4a257"
+        },
+        "809d888e-b1a6-49d9-bc80-d4685fe2fbf1": {
+            "name": "Sprocket 231",
+            "storage_path": "assets/luts/Sprocket 231.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "809d888e-b1a6-49d9-bc80-d4685fe2fbf1"
+        },
+        "031d209c-f3a9-41f2-b673-811845f90973": {
+            "name": "Arabica 12",
+            "storage_path": "assets/luts/Arabica 12.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "031d209c-f3a9-41f2-b673-811845f90973"
+        },
+        "70ee27f2-2a36-48f4-8c6a-cc3affa4d024": {
+            "name": "Teigen 28",
+            "storage_path": "assets/luts/Teigen 28.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "70ee27f2-2a36-48f4-8c6a-cc3affa4d024"
+        },
+        "1fe2559a-a0d2-41ee-b978-81cfc43b2cf1": {
+            "name": "Remy 24",
+            "storage_path": "assets/luts/Remy 24.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "1fe2559a-a0d2-41ee-b978-81cfc43b2cf1"
+        },
+        "be3db983-b7a3-404b-8a2d-9d4aacee1f29": {
+            "name": "Bourbon 64",
+            "storage_path": "assets/luts/Bourbon 64.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "be3db983-b7a3-404b-8a2d-9d4aacee1f29"
+        },
+        "30d22565-599e-47f0-9874-c0f271f2040e": {
+            "name": "Vireo 37",
+            "storage_path": "assets/luts/Vireo 37.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "30d22565-599e-47f0-9874-c0f271f2040e"
+        },
+        "215c24bf-33c4-476f-b430-4bf60862849f": {
+            "name": "Neon 770",
+            "storage_path": "assets/luts/Neon 770.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "215c24bf-33c4-476f-b430-4bf60862849f"
+        },
+        "8995e2f6-08d8-4302-a500-75a0afbcbeda": {
+            "name": "Trent 18",
+            "storage_path": "assets/luts/Trent 18.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "8995e2f6-08d8-4302-a500-75a0afbcbeda"
+        },
+        "30e1cab9-1ade-4dc7-abca-a4a26780faa2": {
+            "name": "Waves",
+            "storage_path": "assets/luts/Waves.cube",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "30e1cab9-1ade-4dc7-abca-a4a26780faa2"
+        },
+        "ac34a1e6-f0e5-401e-a892-b3d0646e82de": {
+            "name": "McKinnon 75",
+            "storage_path": "assets/luts/McKinnon 75.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "ac34a1e6-f0e5-401e-a892-b3d0646e82de"
+        },
+        "67a7c52c-efba-4ad8-8fbc-61abbdaa3168": {
+            "name": "Milo 5",
+            "storage_path": "assets/luts/Milo 5.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "67a7c52c-efba-4ad8-8fbc-61abbdaa3168"
+        },
+        "9cc7af0a-1d24-43cd-b790-e9c7a6b06788": {
+            "name": "Byers 11",
+            "storage_path": "assets/luts/Byers 11.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "9cc7af0a-1d24-43cd-b790-e9c7a6b06788"
+        },
+        "7932fefa-4718-4dda-a441-ea8f556ae014": {
+            "name": "Korben 214",
+            "storage_path": "assets/luts/Korben 214.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "7932fefa-4718-4dda-a441-ea8f556ae014"
+        },
+        "41b51a49-6d8e-4cc9-825d-614cb1950f44": {
+            "name": "Pitaya 15",
+            "storage_path": "assets/luts/Pitaya 15.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "41b51a49-6d8e-4cc9-825d-614cb1950f44"
+        },
+        "a48016ff-2f25-4904-9163-8c99b99ee0a6": {
+            "name": "OrangeAndBlue",
+            "storage_path": "assets/luts/OrangeAndBlue.cube",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "a48016ff-2f25-4904-9163-8c99b99ee0a6"
+        },
+        "bc246886-7f79-49b0-a946-a67d37c70e1f": {
+            "name": "Contrail 35",
+            "storage_path": "assets/luts/Contrail 35.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "bc246886-7f79-49b0-a946-a67d37c70e1f"
+        },
+        "5384f862-3080-4361-aea7-e6ae6e676cd1": {
+            "name": "Tweed 71",
+            "storage_path": "assets/luts/Tweed 71.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "5384f862-3080-4361-aea7-e6ae6e676cd1"
+        },
+        "dbf3ab08-3951-462d-87d1-eb7e78078845": {
+            "name": "Reeve 38",
+            "storage_path": "assets/luts/Reeve 38.CUBE",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "dbf3ab08-3951-462d-87d1-eb7e78078845"
+        },
+        "7dee51cd-4e91-4cbf-8c98-69c91a48a0e7": {
+            "name": "MagicHour",
+            "storage_path": "assets/luts/MagicHour.cube",
+            "filter_type": "default",
+            "owner_id": null,
+            "id": "7dee51cd-4e91-4cbf-8c98-69c91a48a0e7"
         }
     }
 }

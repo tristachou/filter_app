@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import apiClient from '../apiClient';
 import FilterBar from './FilterBar';
 import MediaLibraryModal from './MediaLibraryModal';
+import SearchModal from './SearchModal'; 
 
 function AppView({ handleLogout }) {
   const [filters, setFilters] = useState([]);
@@ -12,6 +13,13 @@ function AppView({ handleLogout }) {
   const [processedFilename, setProcessedFilename] = useState('');
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [mediaItems, setMediaItems] = useState([]);
+
+  const [searchQuery, setSearchQuery] = useState('');      // 儲存搜尋框中的文字
+  const [searchResults, setSearchResults] = useState([]);  // 儲存從後端 API 拿到的圖片結果
+  const [isSearching, setIsSearching] = useState(false);   // 追蹤是否正在載入搜尋結果
+  const [searchError, setSearchError] = useState(null);    // 儲存搜尋時的錯誤訊息
+
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
   const fetchFilters = useCallback(async () => {
     try {
@@ -134,6 +142,35 @@ function AppView({ handleLogout }) {
     }
   };
 
+  const handleSearch = () => {
+    if (searchQuery.trim() !== '') {
+      setIsSearchModalOpen(true); // 打開模態視窗
+    }
+  };
+
+  const handlePexelsImageSelect = async (photo) => {
+    setUiState('processing'); // 顯示載入動畫
+    setSearchResults([]); // 清空搜尋結果，準備顯示主圖片
+    
+    try {
+      // 1. 從 Pexels URL 下載圖片數據
+      const response = await fetch(photo.src.original);
+      const blob = await response.blob(); // 轉換成 Blob 物件
+
+      // 2. 將 Blob 轉換成 JavaScript 的 File 物件
+      const imageFile = new File([blob], `${photo.id}.jpg`, { type: 'image/jpeg' });
+
+      // 3. ✨ 呼叫你現有的 handleFileSelect 函式！ ✨
+      // 這樣就無縫接軌到你原本的濾鏡套用流程了
+      handleFileSelect(imageFile);
+
+    } catch (error) {
+      console.error("Failed to load Pexels image:", error);
+      alert("Failed to load the selected image.");
+      resetState();
+    }
+  };
+
   const handleClearLibrary = async () => {
     if (!window.confirm('Are you sure you want to delete your entire media library? This action cannot be undone.')) {
       return;
@@ -148,6 +185,8 @@ function AppView({ handleLogout }) {
   };
 
   const renderDropZoneContent = () => {
+
+
     switch (uiState) {
       case 'file_selected':
         return (
@@ -189,19 +228,51 @@ function AppView({ handleLogout }) {
 
   return (
     <div id="app-view" className="view">
-      <div className="card app-card">
+      <div className="left-panel">
+        <FilterBar
+          filters={filters}
+          selectedFilterId={selectedFilterId}
+          onFilterSelect={handleFilterSelect}
+          onLutUploadClick={handleLutUploadClick}
+          isActive={uiState === 'file_selected'}
+        />
+        <input
+          type="file"
+          id="lut-input"
+          accept=".cube"
+          className="hidden"
+          onChange={handleLutFileChange}
+        />
+      </div>
+      <div className="right-panel">
         <header className="app-header">
-          <h1 className="app-title">Web Filter App</h1>
-          <nav>
+          
+          
             <button id="media-library-button" className="btn btn-secondary" onClick={handleOpenLibrary}>
               <i className="fas fa-images"></i>
               <span>My Library</span>
             </button>
+
+            <div className="search-container">
+              <i className="fas fa-search"></i>
+              <input 
+                  type="text" 
+                  placeholder="Search for photos on Pexels..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                          handleSearch(); // 按下 Enter 時呼叫 handleSearch
+                      }
+                  }}
+              />
+            </div>
+
             <button id="logout-button" className="btn btn-secondary" onClick={handleLogout}>
               <i className="fas fa-sign-out-alt"></i>
               <span>Logout</span>
             </button>
-          </nav>
+          
         </header>
 
         <main
@@ -219,21 +290,6 @@ function AppView({ handleLogout }) {
           className="hidden"
           onChange={(e) => handleFileSelect(e.target.files[0])}
         />
-
-        <FilterBar
-          filters={filters}
-          selectedFilterId={selectedFilterId}
-          onFilterSelect={handleFilterSelect}
-          onLutUploadClick={handleLutUploadClick}
-          isActive={uiState === 'file_selected'}
-        />
-        <input
-          type="file"
-          id="lut-input"
-          accept=".cube"
-          className="hidden"
-          onChange={handleLutFileChange}
-        />
       </div>
 
       <MediaLibraryModal
@@ -242,6 +298,12 @@ function AppView({ handleLogout }) {
         mediaItems={mediaItems}
         onDownload={handleDownloadFromLibrary}
         onClear={handleClearLibrary}
+      />
+      <SearchModal
+        isOpen={isSearchModalOpen}
+        initialQuery={searchQuery}
+        onClose={() => setIsSearchModalOpen(false)}
+        onImageSelect={handlePexelsImageSelect} // 我們會重用這個函式！
       />
     </div>
   );

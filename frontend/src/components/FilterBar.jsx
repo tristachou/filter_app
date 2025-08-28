@@ -7,17 +7,15 @@ function FilterBar({ filters, selectedFilterId, onFilterSelect, onLutUploadClick
         <i className="fas fa-plus"></i>
         <span>Upload LUT</span>
       </div>
-      <div id="preset-filter-list">
-        {filters.map(filter => (
-          <div
-            key={filter.id}
-            className={`filter-swatch ${selectedFilterId === filter.id ? 'selected' : ''}`}
-            onClick={() => onFilterSelect(filter.id)}
-          >
-            <span>{filter.filter_name || filter.name}</span>
-          </div>
-        ))}
-      </div>
+      {filters.map(filter => (
+        <div
+          key={filter.id}
+          className={`filter-swatch ${selectedFilterId === filter.id ? 'selected' : ''}`}
+          onClick={() => onFilterSelect(filter.id)}
+        >
+          <span>{filter.filter_name || filter.name}</span>
+        </div>
+      ))}
     </footer>
   );
 }

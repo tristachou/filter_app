@@ -18,8 +18,8 @@
 }
 
 * {
-    margin: 0;
-    padding: 0;
+    margin: 10;
+    padding: 10;
     box-sizing: border-box;
 }
 
@@ -31,7 +31,6 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    padding: 24px;
 }
 
 .hidden {
@@ -50,6 +49,7 @@ body {
 /* ======================================================================== */
 .view {
     width: 100%;
+    height: 100vh;
 }
 
 .login-card {
@@ -58,20 +58,105 @@ body {
     margin: auto;
 }
 
-.app-card {
-    max-width: 800px;
-    margin: auto;
+.search-container {
+    flex-grow: 1; /* 讓搜尋區塊填滿中間的所有可用空間 */
+    max-width: 600px; /* 給一個最大寬度，避免在超大螢幕上拉得太長 */
+    margin: 0 24px; /* 在左右兩側增加一些間距 */
+    display: flex;
+    align-items: center;
+    background-color: var(--background-color); /* 使用變數，與其他輸入框背景色一致 */
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0 12px;
+    transition: border-color 0.2s ease-in-out;
+}
+
+.search-container:focus-within {
+    border-color: var(--accent-color); /* 當輸入框被點擊時，整個容器邊框變色 */
+}
+
+.search-container i {
+    color: var(--text-secondary);
+    margin-right: 8px;
+}
+
+.search-container input {
+    width: 100%;
+    height: 38px; /* 給一個固定高度 */
+    border: none;
+    background: none;
+    color: var(--text-primary);
+    font-size: 15px;
+    padding: 0; /* 清除預設 padding */
+}
+
+.search-container input:focus {
+    outline: none; /* 移除點擊時的預設藍色外框 */
+}
+
+
+/* New App Layout */
+#app-view {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+.left-panel {
+  order: 2;
+  width: 100%; /* 寬度佔滿 */
+  height: 260px; /* 給一個固定的高度，你可以根據喜好調整 */
+  flex-shrink: 0; /* 防止它被壓縮 */
+  background-color: var(--component-bg-color);
+  border-top: 1px solid var(--border-color); /* 分隔線改到上方 */
+  padding: 24px 32px; /* 調整內距 */
+  display: flex;
+  flex-direction: column; /* 保持標題和濾鏡列表的垂直堆疊 */
+  gap: 16px;
+}
+
+
+
+.right-panel {
+  order: 1;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto; /* Allow right panel to scroll if content is too long */
+}
+
+/* Responsive Layout */
+@media (max-width: 768px) {
+  #app-view {
+    flex-direction: column;
+  }
+
+  .left-panel {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .right-panel {
+    overflow-y: initial; /* Reset scrolling for mobile */
+  }
 }
 
 .app-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 32px;
+    padding: 24px 32px;
     border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 main {
+    flex-grow: 1;
+    display: flex;
     padding: 32px;
 }
 
@@ -83,6 +168,15 @@ footer {
 /* ======================================================================== */
 /* 3. Typography                                                         */
 /* ======================================================================== */
+.panel-title {
+  font-size: 0.875rem; /* 14px */
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: -8px; /* Adjust space slightly */
+}
+
 h1, .app-title { font-size: 1.5rem; font-weight: 600; }
 h2 { font-size: 1.25rem; font-weight: 600; }
 h3 { font-size: 1.125rem; font-weight: 600; margin-bottom: 8px; }
@@ -155,14 +249,13 @@ p { color: var(--text-secondary); line-height: 1.5; }
 #media-drop-zone {
     border: 2px dashed var(--border-color);
     border-radius: var(--standard-border-radius);
-    min-height: 250px;
     display: flex;
     justify-content: center;
     align-items: center;
     text-align: center;
     transition: all 0.2s ease-in-out;
-    margin-bottom: 32px;
     position: relative;
+    flex-grow: 1; /* This makes the drop zone expand vertically */
 }
 #media-drop-zone.active-drop { cursor: pointer; }
 #media-drop-zone.active-drop:hover {
@@ -189,37 +282,57 @@ p { color: var(--text-secondary); line-height: 1.5; }
 
 /* Filter Bar */
 #filter-bar {
-    display: flex;
-    gap: 16px;
-    padding: 12px;
-    background-color: var(--background-color);
-    border-radius: var(--standard-border-radius);
-    overflow-x: auto;
-    opacity: 0.5;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
+  display: flex;
+  flex-direction: row; 
+  gap: 16px;
+  overflow-x: auto; 
+  flex-grow: 1;
+  min-height: 0;
+  padding-bottom: 16px; 
 }
-#filter-bar.active { opacity: 1; pointer-events: auto; }
-#preset-filter-list { display: flex; gap: 16px; }
 
+/* Redesigned filter swatches for consistency and visual appeal */
 .filter-swatch {
-    flex-shrink: 0;
-    width: 120px;
-    height: 90px;
-    background-color: var(--component-bg-color);
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease-in-out;
-    font-weight: 500;
+  width: 150px; 
+  flex-shrink: 0; 
+  aspect-ratio: 4 / 3;
+  background-color: var(--background-color);
+  border: 2px solid var(--border-color); /* Default to solid */
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease-in-out;
+  font-weight: 500;
+  padding: 16px;
+  color: var(--text-secondary);
 }
-.filter-swatch:hover { transform: translateY(-4px); border-color: var(--text-secondary); }
-.filter-swatch.selected { border-color: var(--accent-color); transform: translateY(-4px); box-shadow: 0 0 15px rgba(10, 132, 255, 0.4); }
+
+/* Special case for the upload box to be dashed */
+#upload-filter-box {
+    border-style: dashed;
+}
+
+.filter-swatch:hover {
+  border-color: var(--accent-color);
+  color: var(--text-primary);
+}
+
+.filter-swatch.selected {
+    border-color: var(--accent-color);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(10, 132, 255, 0.4);
+}
+
+.filter-swatch.selected {
+    border-color: var(--accent-color);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(10, 132, 255, 0.4);
+}
+
 
 /* ======================================================================== */
 /* 6. Modal                                                              */
@@ -268,4 +381,33 @@ p { color: var(--text-secondary); line-height: 1.5; }
     display: flex;
     align-items: center;
     gap: 16px;
+}
+
+
+/* index.css */
+
+.search-modal-content {
+  width: 90%;
+  max-width: 960px; /* 可以讓搜尋彈窗更寬一點 */
+  height: 80vh; /* 給一個高度 */
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-body {
+  flex-grow: 1; /* 讓內容區填滿剩餘空間 */
+  overflow-y: auto; /* 如果內容太多，可以滾動 */
+  position: relative; /* 為了讓 spinner 置中 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 這個樣式你可能已經有了，如果沒有就加上 */
+.search-results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  width: 100%;
+  padding: 16px 0; /* 調整內距 */
 }

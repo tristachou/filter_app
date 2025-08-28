@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import uvicorn
 
-from routers import auth, media, filters, process
+from routers import filters, media, process, auth, pexels
 from routers.process import apply_filter_to_media
 from routers.process import apply_filter_to_media
 
@@ -49,6 +49,7 @@ def on_startup():
 app.include_router(auth.router, prefix="/api")
 app.include_router(media.router, prefix="/api")
 app.include_router(filters.router, prefix="/api")
+app.include_router(pexels.router, prefix="/api/pexels", tags=["pexels"])
 
 # Manually add the process route to bypass the router object
 app.add_api_route(

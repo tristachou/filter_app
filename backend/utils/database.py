@@ -28,6 +28,10 @@ def load_db() -> Dict[str, Any]:
             "media_items": {},
             "filter_items": {},
         }
+
+        _seed_default_filters(db_data)
+    
+    
         save_db(db_data)
         return db_data
     
@@ -75,6 +79,35 @@ def delete_user_media(db: Dict[str, Any], user_id: UUID) -> list[str]:
         del db["media_items"][item["id"]]
         
     return paths_to_delete
+
+def _seed_default_filters(db: Dict[str, Any]):
+    """
+    Scans the default LUTs directory and adds any new filters to the database.
+    This is intended to be run at application startup.
+    """
+    default_luts_path = ROOT_DIR / "assets" / "luts"
+    if not default_luts_path.exists():
+        return 
+    existing_paths = {item["storage_path"] for item in db["filter_items"].values()}
+    
+
+    for lut_file in default_luts_path.glob("*"):
+      
+        if lut_file.suffix.lower() == '.cube':
+            
+            relative_path = str(lut_file.relative_to(ROOT_DIR))
+
+            if relative_path not in existing_paths:
+                print(f"Found new default filter, adding to DB: {lut_file.name}")
+                filter_item = FilterItemInDB(
+                    name=lut_file.stem,  
+                    storage_path=relative_path,
+                    filter_type="default",
+                    owner_id=None
+                )
+                add_filter_item(db, filter_item)
+
+
 
 # --- Filter Item Functions ---
 
