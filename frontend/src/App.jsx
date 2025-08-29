@@ -25,7 +25,7 @@ function App() {
       formData.append('username', username);
       formData.append('password', password);
 
-      const response = await apiClient.post('/api/auth/token', formData);
+      const response = await apiClient.post('/auth/token', formData);
       const new_token = response.data.access_token;
       localStorage.setItem('jwt_token', new_token);
       setToken(new_token);

@@ -1,10 +1,10 @@
-// frontend/src/components/SearchModal.jsx (最終確認版)
+// frontend/src/components/SearchModal.jsx 
 
 import React, { useState, useEffect, useCallback } from 'react';
 import apiClient from '../apiClient';
 
 function SearchModal({ initialQuery, isOpen, onClose, onImageSelect, onVideoSelect }) {
-  // 這些 state 都屬於 Modal 自己，與 AppView 無關
+  
   const [searchType, setSearchType] = useState('photos');
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +17,7 @@ function SearchModal({ initialQuery, isOpen, onClose, onImageSelect, onVideoSele
     setResults([]);
     
     try {
-      const response = await apiClient.get('/api/pexels/search', {
+      const response = await apiClient.get('/pexels/search', {
         params: { query: initialQuery, search_type: searchType }
       });
       setResults(response.data.media);

@@ -13,18 +13,37 @@ function AppView({ handleLogout }) {
   const [processedFilename, setProcessedFilename] = useState('');
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [mediaItems, setMediaItems] = useState([]);
-
-  const [searchQuery, setSearchQuery] = useState('');      // 儲存搜尋框中的文字
+  const [searchQuery, setSearchQuery] = useState('');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
-  const fetchFilters = useCallback(async () => {
+  // --- ✨ PAGINATION STATE START ✨ ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const ITEMS_PER_PAGE = 10; // 和後端 limit 保持一致
+  // --- ✨ PAGINATION STATE END ✨ ---
+
+  const fetchFilters = useCallback(async (page) => {
     try {
-      const response = await apiClient.get('/api/filters/');
-      setFilters(response.data);
-    } catch (error) { console.error('Failed to fetch filters:', error); }
+      // ✨ 向新的分頁 API 發送請求
+      const response = await apiClient.get(`/filters/?page=${page}&limit=${ITEMS_PER_PAGE}`);
+      setFilters(response.data.items);
+      setTotalItems(response.data.total_items);
+    } catch (error) { 
+      console.error('Failed to fetch filters:', error); 
+    }
   }, []);
 
-  useEffect(() => { fetchFilters(); }, [fetchFilters]);
+  // ✨ 當 currentPage 改變時，重新獲取資料
+  useEffect(() => { 
+    fetchFilters(currentPage); 
+  }, [currentPage, fetchFilters]);
+
+  // ✨ 處理分頁變更的函式
+  const handlePageChange = (newPage) => {
+    if (newPage > 0 && newPage <= Math.ceil(totalItems / ITEMS_PER_PAGE)) {
+      setCurrentPage(newPage);
+    }
+  };
 
   const handleLutUploadClick = () => { document.getElementById('lut-input').click(); };
 
@@ -37,9 +56,14 @@ function AppView({ handleLogout }) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      await apiClient.post('/api/filters/upload', formData);
+      await apiClient.post('/filters/upload', formData);
       alert('LUT uploaded successfully!');
-      await fetchFilters();
+      // ✨ 上傳成功後回到第一頁並重新獲取資料
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+      } else {
+        fetchFilters(1);
+      }
     } catch (error) {
       alert(`Failed to upload LUT: ${error.response?.data?.detail || error.message}`);
     } finally {
@@ -47,6 +71,7 @@ function AppView({ handleLogout }) {
     }
   };
 
+  // ... (你其他的函式維持不變) ...
   const resetState = () => {
     setUiState('initial');
     setCurrentFile(null);
@@ -69,12 +94,12 @@ function AppView({ handleLogout }) {
     try {
       const mediaFormData = new FormData();
       mediaFormData.append('file', currentFile);
-      const uploadResponse = await apiClient.post('/api/media/upload', mediaFormData);
-      const processResponse = await apiClient.post('/api/process', {
+      const uploadResponse = await apiClient.post('/media/upload', mediaFormData);
+      const processResponse = await apiClient.post('/process', {
         media_id: uploadResponse.data.id,
         filter_id: filterId,
       });
-      const downloadResponse = await apiClient.get(`/api/media/download/${processResponse.data.processed_media_id}`, {
+      const downloadResponse = await apiClient.get(`/media/download/${processResponse.data.processed_media_id}`, {
         responseType: 'blob',
       });
       const blobUrl = URL.createObjectURL(downloadResponse.data);
@@ -106,7 +131,7 @@ function AppView({ handleLogout }) {
 
   const handleOpenLibrary = async () => {
     try {
-      const response = await apiClient.get('/api/media/');
+      const response = await apiClient.get('/media/');
       setMediaItems(response.data);
       setIsLibraryOpen(true);
     } catch (error) {
@@ -121,7 +146,7 @@ function AppView({ handleLogout }) {
 
   const handleDownloadFromLibrary = async (mediaId, filename) => {
     try {
-      const response = await apiClient.get(`/api/media/download/${mediaId}`, {
+      const response = await apiClient.get(`/media/download/${mediaId}`, {
         responseType: 'blob',
       });
       const url = URL.createObjectURL(response.data);
@@ -192,7 +217,7 @@ function AppView({ handleLogout }) {
       return;
     }
     try {
-      await apiClient.delete('/api/media/all');
+      await apiClient.delete('/media/all');
       setMediaItems([]);
     } catch (error) {
       console.error('Failed to clear library:', error);
@@ -251,6 +276,12 @@ function AppView({ handleLogout }) {
           onFilterSelect={handleFilterSelect}
           onLutUploadClick={handleLutUploadClick}
           isActive={uiState === 'file_selected'}
+          // --- ✨ PAGINATION PROPS START ✨ ---
+          currentPage={currentPage}
+          totalItems={totalItems}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={handlePageChange}
+          // --- ✨ PAGINATION PROPS END ✨ ---
         />
         <input
           type="file"

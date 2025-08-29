@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: '/api', // Ensure this matches the backend
+  baseURL: '/api/v1', // Ensure this matches the backend
 });
 
 apiClient.interceptors.request.use((config) => {

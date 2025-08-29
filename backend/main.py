@@ -46,23 +46,24 @@ def on_startup():
 
 # --- API Routers --- #
 # Note: The order of routing is important. API routers should come before the static files mount.
-app.include_router(auth.router, prefix="/api")
-app.include_router(media.router, prefix="/api")
-app.include_router(filters.router, prefix="/api")
-app.include_router(pexels.router, prefix="/api/pexels", tags=["pexels"])
+api_v1_router = APIRouter(prefix="/api/v1")
+
+api_v1_router.include_router(auth.router)
+api_v1_router.include_router(media.router)
+api_v1_router.include_router(filters.router)
+api_v1_router.include_router(pexels.router, prefix="/pexels", tags=["pexels"])
 
 
 # Manually add the process route to bypass the router object
-app.add_api_route(
-    "/api/process", 
+api_v1_router.add_api_route(
+    "/process", 
     apply_filter_to_media, 
     methods=["POST"], 
     tags=["Processing"]
 )
 
 
-
-
+app.include_router(api_v1_router) 
 
 
 # --- Main Entry Point for Development --- #

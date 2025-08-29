@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
-from typing import List, Annotated
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status, Query
+from typing import List, Annotated, Dict, Any
 import uuid
 from pathlib import Path
 
@@ -57,15 +57,41 @@ async def upload_filter(current_user: Annotated[User, Depends(get_current_user)]
 
     return filter_item
 
-@router.get("/", response_model=List[FilterItemInDB])
-async def list_available_filters(current_user: Annotated[User, Depends(get_current_user)]):
+# --- ✨ MODIFICATION START ✨ ---
+
+@router.get("/", response_model=Dict[str, Any])
+async def list_available_filters(
+    current_user: Annotated[User, Depends(get_current_user)],
+    page: int = Query(1, ge=1, description="Page number to retrieve"),
+    limit: int = Query(10, ge=1, le=100, description="Number of items per page")
+):
     """
-    Retrieves a list of filters available to the current user.
+    Retrieves a paginated list of filters available to the current user.
     This includes all 'default' filters and the user's own 'custom' filters.
     """
     db = load_db()
-    filter_items_data = get_filters_for_user(db, current_user.id, current_user.filter_usage)
-    return [FilterItemInDB(**item) for item in filter_items_data]
+    
+    # --- ✨ THIS IS THE CORRECTED LINE ✨ ---
+    all_user_filters = get_filters_for_user(db, current_user.id, current_user.filter_usage)
+
+    # 2. 計算總數
+    total_items = len(all_user_filters)
+
+    # 3. 根據 page 和 limit 計算要返回的資料切片 (slice)
+    start_index = (page - 1) * limit
+    end_index = start_index + limit
+    paginated_items = all_user_filters[start_index:end_index]
+
+    # 4. 回傳一個包含分頁資訊的物件
+    return {
+        "total_items": total_items,
+        "items": [FilterItemInDB(**item) for item in paginated_items],
+        "page": page,
+        "limit": limit
+    }
+
+# --- ✨ MODIFICATION END ✨ ---
+
 
 @router.get("/{filter_id}", response_model=FilterItemInDB)
 async def get_single_filter(filter_id: uuid.UUID, current_user: Annotated[User, Depends(get_current_user)]):
