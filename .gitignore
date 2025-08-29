@@ -7,7 +7,8 @@
 # Python
 # Ignore virtual environments, including the one in the backend folder.
 .venv/
-backend/.venv/
+backend/venv/
+iac/.venv
 
 # Ignore bytecode and cache
 __pycache__/
@@ -22,6 +23,7 @@ htmlcov/
 
 # Storage
 # Ignore user-uploaded and processed media
+backend/db.json
 storage/
 
 # IDE and OS files

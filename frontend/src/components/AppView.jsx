@@ -146,7 +146,6 @@ function AppView({ handleLogout }) {
 
   const handlePexelsImageSelect = async (photo) => {
     setUiState('processing'); // 顯示載入動畫
-    setSearchResults([]); // 清空搜尋結果，準備顯示主圖片
     
     try {
       // 1. 從 Pexels URL 下載圖片數據

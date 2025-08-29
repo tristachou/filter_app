@@ -45,6 +45,13 @@ function SearchModal({ initialQuery, isOpen, onClose, onImageSelect, onVideoSele
     onClose();
   };
 
+  const handleSearchTypeChange = (newType) => {
+    if (searchType !== newType) {
+      setSearchType(newType);
+      setResults([]); // Immediately clear results to prevent rendering with wrong data structure
+    }
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content search-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -53,8 +60,8 @@ function SearchModal({ initialQuery, isOpen, onClose, onImageSelect, onVideoSele
           <button className="btn-icon" onClick={onClose}>&times;</button>
         </header>
         <div className="search-type-toggle">
-          <button className={`btn ${searchType === 'photos' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setSearchType('photos')}>Photos</button>
-          <button className={`btn ${searchType === 'videos' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setSearchType('videos')}>Videos</button>
+          <button className={`btn ${searchType === 'photos' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => handleSearchTypeChange('photos')}>Photos</button>
+          <button className={`btn ${searchType === 'videos' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => handleSearchTypeChange('videos')}>Videos</button>
         </div>
         <div className="modal-body">
           {isLoading && <div className="spinner"></div>}
