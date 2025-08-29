@@ -62,7 +62,9 @@ def get_user_media(db: Dict[str, Any], user_id: UUID) -> list[Dict[str, Any]]:
     user_items = []
     for item in db["media_items"].values():
         # Only return items that belong to the user AND are processed files
-        if item["owner_id"] == str(user_id) and "processed_output" in item["storage_path"]:
+        
+        if item["owner_id"] == str(user_id):
+            print(item)
             user_items.append(item)
     return user_items
 
