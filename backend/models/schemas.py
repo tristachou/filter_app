@@ -2,12 +2,14 @@
 from pydantic import BaseModel, Field
 from uuid import UUID, uuid4
 from datetime import datetime
+from typing import Optional, Dict
 
 class User(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     username: str
     hashed_password: str
     role: str = "user"
+    filter_usage: Optional[Dict[str, int]] = Field(default_factory=dict)
 
 class Token(BaseModel):
     access_token: str
@@ -23,7 +25,7 @@ class MediaItemBase(BaseModel):
 class MediaItemInDB(MediaItemBase):
     id: UUID = Field(default_factory=uuid4)
 
-from typing import Optional
+from typing import Optional, Dict
 
 class FilterItemBase(BaseModel):
     name: str = Field(..., serialization_alias='filter_name')

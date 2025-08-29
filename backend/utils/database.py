@@ -121,13 +121,34 @@ def add_filter_item(db: Dict[str, Any], filter_item: FilterItemInDB) -> FilterIt
     db["filter_items"][str(filter_item.id)] = filter_item.model_dump()
     return filter_item
 
-def get_filters_for_user(db: Dict[str, Any], user_id: UUID) -> list[Dict[str, Any]]:
-    """Retrieves all default filters plus all filters owned by the specified user."""
+def get_filters_for_user(db: Dict[str, Any], user_id: UUID, user_filter_usage: Dict[str, int]) -> list[Dict[str, Any]]:
+    """
+    Retrieves all default filters plus all filters owned by the specified user,
+    sorted by the user's usage count in descending order.
+    """
     visible_filters = []
     for item in db["filter_items"].values():
         # A filter is visible if it's a default filter OR if the user is the owner
         if item.get("filter_type") == "default" or item.get("owner_id") == str(user_id):
-            visible_filters.append(item)
+            # Create a copy of the item to avoid modifying the original db object
+            item_copy = item.copy()
+            
+            # Get user-specific usage count, default to 0 if not found
+            filter_id_str = str(item_copy["id"]) # Ensure filter ID is a string for dictionary lookup
+            item_usage_count = user_filter_usage.get(filter_id_str, 0)
+            
+            # Add usage count to the item_copy for sorting purposes (temporarily)
+            item_copy["_user_usage_count"] = item_usage_count
+            visible_filters.append(item_copy)
+            
+    # Sort filters by user-specific usage count in descending order
+    visible_filters.sort(key=lambda x: x.get("_user_usage_count", 0), reverse=True)
+    
+    # Remove the temporary _user_usage_count key before returning
+    for item in visible_filters:
+        if "_user_usage_count" in item:
+            del item["_user_usage_count"]
+            
     return visible_filters
 
 # --- User Functions ---

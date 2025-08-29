@@ -78,6 +78,18 @@ async def apply_filter_to_media(
 
     print(f"[PROCESSING FINISHED] Output saved to {output_media_path}")
 
+    # --- Increment filter usage count for the current user ---
+    # Find the user in the database's user list
+    for user_data in db["users"].values():
+        if user_data["id"] == str(current_user.id):
+            # Ensure filter_usage exists and is a dictionary
+            if "filter_usage" not in user_data or not isinstance(user_data["filter_usage"], dict):
+                user_data["filter_usage"] = {}
+            
+            filter_id_str = str(request.filter_id)
+            user_data["filter_usage"][filter_id_str] = user_data["filter_usage"].get(filter_id_str, 0) + 1
+            break # User found and updated, exit loop
+
     # --- 4. Save New Media Item to Database ---
     processed_media_item = MediaItemInDB(
         owner_id=current_user.id,

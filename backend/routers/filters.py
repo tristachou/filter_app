@@ -64,7 +64,7 @@ async def list_available_filters(current_user: Annotated[User, Depends(get_curre
     This includes all 'default' filters and the user's own 'custom' filters.
     """
     db = load_db()
-    filter_items_data = get_filters_for_user(db, current_user.id)
+    filter_items_data = get_filters_for_user(db, current_user.id, current_user.filter_usage)
     return [FilterItemInDB(**item) for item in filter_items_data]
 
 @router.get("/{filter_id}", response_model=FilterItemInDB)
