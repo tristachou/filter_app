@@ -1,0 +1,23 @@
+# docker-compose.prod.yml (最終正確版本)
+version: '3.8'
+
+services:
+  backend:
+    image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-backend:latest
+    env_file:
+      - ./.env
+    restart: always
+
+  frontend:
+    image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-frontend:latest
+    restart: always
+
+
+  nginx:
+    image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-nginx:latest
+    ports:
+      - "80:80" 
+    restart: always
+    depends_on:
+      - backend
+      - frontend

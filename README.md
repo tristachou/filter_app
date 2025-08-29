@@ -130,3 +130,24 @@ Follow these steps to run each service in a separate terminal.
 -   [x] **Custom processing (2.5 marks)**
 -   [ ] **Infrastructure as code (2.5 marks)**
 -   [x] **Web client (2.5 marks)**
+
+
+
+
+# 登入 EC2
+ssh -i [您的金鑰路徑] ubuntu@[您的EC2 IP]
+
+# 進入您存放設定檔的資料夾
+cd my-app
+
+# (推薦) 先拉取最新的映像，確保使用的是剛剛推送的版本
+docker-compose -f docker-compose.prod.yml pull
+
+# 啟動服務 (-d 參數代表在背景運行)
+docker-compose -f docker-compose.prod.yml up -d
+
+docker-compose -f docker-compose.prod.yml logs backend
+
+
+
+docker buildx build --platform linux/amd64 -t <您的 AWS 帳號 ID>.dkr.ecr.<您的區域>.amazonaws.com/filter-app-frontend:latest ./frontend --push

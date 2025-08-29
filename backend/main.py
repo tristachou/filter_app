@@ -51,6 +51,7 @@ app.include_router(media.router, prefix="/api")
 app.include_router(filters.router, prefix="/api")
 app.include_router(pexels.router, prefix="/api/pexels", tags=["pexels"])
 
+
 # Manually add the process route to bypass the router object
 app.add_api_route(
     "/api/process", 
