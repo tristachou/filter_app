@@ -52,7 +52,7 @@ def run_load_test():
     
     print("--- start loading test ---")
     
-    # 1. 登入以取得權杖
+    
     token = login_and_get_token("user2", "fake_password_2")
     if not token:
         print("login fail")
@@ -60,14 +60,14 @@ def run_load_test():
         
     print("login success, start loading test")
     
-    # 2. 建立並啟動多個執行緒
+    
     threads = []
     for i in range(NUM_THREADS):
         thread = threading.Thread(target=load_test_thread, args=(token, i))
         threads.append(thread)
         thread.start()
     
-    # 3. 等待所有執行緒完成
+    
     for thread in threads:
         thread.join()
     
