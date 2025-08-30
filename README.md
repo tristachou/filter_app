@@ -42,6 +42,8 @@ The entire application is containerized with Docker for consistent development a
 
 Use this method to run the application on your local machine.
 
+### Method 1
+
 **Prerequisites:**
 - Docker & Docker Compose
 
@@ -64,6 +66,50 @@ Use this method to run the application on your local machine.
     -   **Frontend**: `http://localhost:5173`
     -   **Backend API**: `http://localhost:8000`
     -   **API Docs (Swagger UI)**: `http://localhost:8000/docs`
+
+
+### Method 2: Running Services Manually (for Development)
+
+Follow these steps to run each service in a separate terminal.
+
+#### Running the Backend
+
+1.  **Navigate to the backend directory**:
+    ```bash
+    cd backend
+    ```
+2.  **Create and activate a virtual environment**:
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows: .venv\Scripts\activate
+    ```
+3.  **Install dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
+4.  **Set environment variables**:
+    The backend requires the environment variables defined in the `.env` file at the project root. You can either load them into your shell manually or run the server from the root directory. The simplest way is to ensure the `.env` file exists at the project root.
+
+5.  **Run the FastAPI server**:
+    ```bash
+    uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    ```
+
+#### Running the Frontend
+
+1.  **Navigate to the frontend directory** (in a new terminal):
+    ```bash
+    cd frontend
+    ```
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
+3.  **Run the Vite development server**:
+    ```bash
+    npm run dev
+    ```
+    The frontend will be accessible at `http://localhost:5173`.
 
 ---
 
