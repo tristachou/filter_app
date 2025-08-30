@@ -16,7 +16,7 @@ Core criteria
 ### Containerise the app
 
 - **ECR Repository name:** filter-app-backend, filter-app-frontend, filter-app-nginx
-- **Video timestamp:**
+- **Video timestamp:** 00:00 - 01:09
 - **Relevant files:**
     - backend/Dockerfile
     - frontend/Dockerfile
@@ -29,12 +29,12 @@ Core criteria
 ### Deploy the container
 
 - **EC2 instance ID:** i-02ea8d7c6306bc80e
-- **Video timestamp:**
+- **Video timestamp:** 00:00 - 01:09
 
 ### User login
 
 - **One line description:** Hard-coded username/password list.  Using JWTs for sessions.
-- **Video timestamp:**
+- **Video timestamp:** 01:20 - 01:32
 - **Relevant files:**
     - backend/routers/auth.py
     - frontend/src/components/LoginView.jsx 
@@ -42,7 +42,7 @@ Core criteria
 ### REST API
 
 - **One line description:** A RESTful API built with FastAPI to manage media, filters, user authentication, and processing tasks.
-- **Video timestamp:**
+- **Video timestamp:** 01:09 - 02:15
 - **Relevant files:**
     - backend/main.py (API entrypoint)
     - backend/routers/ (Contains all API endpoints like auth.py, filters.py, media.py, etc.)
@@ -51,46 +51,50 @@ Core criteria
 ### Data types
 
 - **One line description:** Manages both structured (metadata for media/filters) and unstructured (the files themselves) data.
-- **Video timestamp:**
+- **Video timestamp:** 02:15 - 02:55
 - **Relevant files:**
     - backend/models/schemas.py
     - backend/utils/database.py
     - storage/
+    - assets/
 
 #### First kind
 
 - **One line description:** Structured JSON data representing the metadata for media and filters.
 - **Type:** Structured
 - **Rationale:** This data has a predefined schema (Pydantic models) and is stored in a key-value format (like a JSON file), allowing for queries and management.
-- **Video timestamp:**
+- **Video timestamp:** 02:15 - 02:33
 - **Relevant files:**
     - backend/models/schemas.py
     - backend/utils/database.py
+    - assets/
 
 #### Second kind
 
 - **One line description:** Raw binary files for media (images/videos) and LUT filters.
 - **Type:** Unstructured
 - **Rationale:** These are files stored directly on the filesystem. The application treats them as opaque blobs for storage and processing, without enforcing a schema on their internal content.
-- **Video timestamp:**
+- **Video timestamp:** 02:34 - 02:55
 - **Relevant files:**
     - storage/media_uploads/
-    * storage/filter_uploads/
+    - storage/filter_uploads/
     - backend/services/process_media.py 
+    
 
 ### CPU intensive task
 
 - **One line description:** Applying .cube LUT filters to user-uploaded images and videos using the ffmpeg library.
-- **Video timestamp:**
+- **Video timestamp:** 02:56 - 03:34
 - **Relevant files:**
     - backend/services/process_media.py (Contains the core FFmpeg processing logic)
     - backend/routers/process.py (The API endpoint that triggers the task)
-    - backend/assets/luts/ (Directory containing the LUT filter files)
+    - backend/assets/luts/ (Directory containing the default LUT filter files)
+    - storage/filter_uploads/ (Directory containing the user uploaded LUT filter files)
 
 ### CPU load testing
 
 - **One line description:** CPU load was tested by manually uploading a long video file to the processing endpoint to observe performance under sustained load.
-- **Video timestamp:**
+- **Video timestamp:** 03:34 - 04:57
 - **Relevant files:**
     - backend/services/process_media.py (The service under test)
     - backend/routers/process.py (The endpoint used for the test)
@@ -104,13 +108,13 @@ Additional criteria
 - **Video timestamp:**
 - **Relevant files:**
     - backend/main.py (Implements the /v1 prefix)
-    - backend/routers/media.py (Implements pagination)
     - backend/routers/filters.py (Implements pagination)
+    
 
 ### External API(s)
 
-- **One line description:** Integrates with the Pexels API to allow users to search for and import stock images.
-- **Video timestamp:**
+- **One line description:** Integrates with the Pexels API to allow users to search for and import stock images and videos.
+- **Video timestamp:** 02:00 - 02:15
 - **Relevant files:**
     - backend/routers/pexels.py
 
@@ -124,7 +128,7 @@ Additional criteria
 ### Custom processing
 
 - **One line description:** The application provides custom media processing by applying user-selected .cube LUT filters to uploaded images and videos via FFmpeg.
-- **Video timestamp:**
+- **Video timestamp:** 03:00 - 03:35
 - **Relevant files:**
     - backend/services/process_media.py
     - backend/routers/process.py
@@ -132,15 +136,16 @@ Additional criteria
 ### Infrastructure as code
 
 - **One line description:** Used a declarative Docker Compose file (docker-compose.prod.yml) and a shell script (build-and-push.sh) to automate the setup and deployment of the application services.
-- **Video timestamp:**
+- **Video timestamp:** 00:45 - 01:09
 - **Relevant files:**
     - docker-compose.prod.yml
+    - docker-compose.yml
     - build-and-push.sh
 
 ### Web client
 
 - **One line description:** A modern web client built with React, allowing users to log in, upload/manage media, and apply filters.
-- **Video timestamp:**
+- **Video timestamp:** 03:00 - 03:15
 - **Relevant files:**
     - frontend/ (The entire directory)
     - frontend/src/App.jsx
