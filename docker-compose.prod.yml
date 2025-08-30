@@ -1,4 +1,4 @@
-# docker-compose.prod.yml (最終正確版本)
+# docker-compose.prod.yml 
 version: '3.8'
 
 services:

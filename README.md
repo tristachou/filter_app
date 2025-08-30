@@ -1,153 +1,177 @@
 # Web Filter App
 
-## Project Description
+## Project Overview
 
-This is a web application that allows users to upload images and videos, apply custom filters (Look-Up Tables - LUTs) to them, and then download the processed media. It features a user authentication system, enabling each user to manage their own library of uploaded and processed media.
+This is a full-stack web application that allows users to upload images and videos, apply custom filters (Look-Up Tables - LUTs), and download the processed media. It features a user authentication system, integration with the Pexels API for sourcing images, and a personal media library for each user.
+
+The entire application is containerized with Docker for consistent development and production environments.
 
 ## Features
 
--   **User Authentication**: Secure login and session management using JWT.
--   **Media Upload**: Upload images (JPG, PNG) and videos (MP4, MOV, AVI, MKV).
--   **Filter Application**: Apply pre-defined or custom `.cube` LUT filters to uploaded media.
--   **CPU-Intensive Processing**: Utilizes `ffmpeg` for media processing.
--   **Media Library**: View, download, and clear a personal library of processed media.
--   **RESTful API**: A clear and well-defined RESTful API as the primary interface.
--   **Modern Web Client**: A responsive React-based client that interacts with all API endpoints.
+-   **User Authentication**: Secure JWT-based login and session management.
+-   **Media Upload**: Supports common image (JPG, PNG) and video (MP4, MOV) formats.
+-   **LUT Filter Application**: Apply `.cube` LUT filters to uploaded media using `ffmpeg`.
+-   **Pexels API Integration**: Search for and import high-quality images directly from Pexels.
+-   **Personal Media Library**: View, download, and manage your uploaded and processed files.
+-   **Containerized**: Fully containerized with Docker and Docker Compose for easy setup.
+-   **RESTful API**: A well-defined FastAPI backend serving a modern React frontend.
+
+## Tech Stack
+
+-   **Backend**: Python, FastAPI
+-   **Frontend**: JavaScript, React, Vite
+-   **Web Server/Proxy**: Nginx
+-   **Containerization**: Docker, Docker Compose
+-   **Deployment**: AWS ECR (Elastic Container Registry)
 
 ## Project Structure
 
-The project has been refactored into a modern monorepo structure with a separate backend and frontend.
+```
+.
+├── backend/         # FastAPI application, API logic, and media processing
+├── frontend/        # React + Vite user interface
+├── nginx/           # Nginx configuration and Dockerfile
+├── build-and-push.sh # Script to build and push Docker images to AWS ECR
+├── docker-compose.yml      # Docker Compose for LOCAL development
+└── docker-compose.prod.yml # Docker Compose for PRODUCTION deployment
+```
 
--   **`backend/`**: Contains the Python FastAPI application, which handles all API logic, media processing, and database interactions.
--   **`frontend/`**: Contains the React + Vite application, which serves as the user interface.
--   **`docker-compose.yml`**: Defines the services, networks, and volumes for running the entire application with Docker.
--   **`.env`**: A file (that you will create) to hold environment variables for the backend service.
+---
 
-## Prerequisites
+## Local Development Setup
 
-Before you begin, ensure you have the following installed:
+Use this method to run the application on your local machine.
 
--   **Python 3.9+** & **pip** (for manual backend setup)
--   **Node.js 20+** & **npm** (for manual frontend setup)
--   **Docker** & **Docker Compose** (for the recommended setup)
--   **ffmpeg**: Essential for media processing. Ensure it's installed and accessible in your system's PATH.
+**Prerequisites:**
+- Docker & Docker Compose
 
-## How to Run the Application
+**Steps:**
 
-There are two ways to run the application. The recommended method for ease of use is with Docker Compose.
-
-### Method 1: Using Docker Compose (Recommended)
-
-This method runs both the backend and frontend in isolated Docker containers.
-
-1.  **Set up Environment Variables**:
-    Create a file named `.env` in the project root directory by copying the example file:
+1.  **Create Environment File**:
+    Copy the example environment file. The default values are suitable for local development.
     ```bash
     cp .env.example .env
     ```
-    *Note: The default values in this file are for development only.*
 
-2.  **Build and Run the Containers**:
+2.  **Build and Run Containers**:
     From the project root directory, run:
     ```bash
     docker-compose up --build
     ```
-    This command will build the images for both services and start them. Be patient, as the first build can take several minutes.
+    The first build may take a few minutes.
 
 3.  **Access the Application**:
-    -   The **Frontend** will be available at: `http://localhost:5173`
-    -   The **Backend API** will be available at: `http://localhost:8000`
-    -   API documentation (Swagger UI) is at: `http://localhost:8000/docs`
+    -   **Frontend**: `http://localhost:5173`
+    -   **Backend API**: `http://localhost:8000`
+    -   **API Docs (Swagger UI)**: `http://localhost:8000/docs`
 
-### Method 2: Running Services Manually (for Development)
+---
 
-Follow these steps to run each service in a separate terminal.
+## Production Deployment on AWS
 
-#### Running the Backend
+This guide outlines how to deploy the application to an AWS EC2 instance using Docker and AWS ECR.
 
-1.  **Navigate to the backend directory**:
+### Step 1: Prerequisites
+
+-   An AWS account.
+-   **AWS CLI** installed and configured on your local machine.
+-   **Docker** installed on your local machine and on the EC2 server.
+-   Three **AWS ECR repositories** created with the following names:
+    -   `filter-app-backend`
+    -   `filter-app-frontend`
+    -   `filter-app-nginx`
+
+### Step 2: Log in to AWS ECR
+
+On your **local machine**, authenticate the Docker CLI with your Amazon ECR registry.
+
+```bash
+# Log in to AWS (e.g., using SSO)
+aws sso login
+
+# Get login password and pipe it to Docker login
+aws ecr get-login-password --region <your-aws-region> | docker login --username AWS --password-stdin <your-aws-account-id>.dkr.ecr.<your-aws-region>.amazonaws.com
+```
+*Replace `<your-aws-region>` and `<your-aws-account-id>` with your specific details.*
+
+### Step 3: Build and Push Docker Images
+
+The provided script builds multi-platform images and pushes them to ECR.
+
+1.  **Verify Script**: Ensure the AWS Account ID and region in `build-and-push.sh` match yours.
+2.  **Run the Script**:
     ```bash
-    cd backend
+    chmod +x build-and-push.sh
+    ./build-and-push.sh
     ```
-2.  **Create and activate a virtual environment**:
+    This will build and push the `backend`, `frontend`, and `nginx` images to your ECR repositories.
+
+### Step 4: Server-Side Setup (on EC2)
+
+1.  **Connect to your EC2 instance**:
     ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows: .venv\Scripts\activate
+    ssh -i /path/to/your-key.pem ubuntu@<your-ec2-ip>
     ```
-3.  **Install dependencies**:
+
+2.  **Create a project directory**:
     ```bash
-    pip install -r requirements.txt
+    mkdir filter-app && cd filter-app
     ```
-4.  **Set environment variables**:
-    The backend requires the environment variables defined in the `.env` file at the project root. You can either load them into your shell manually or run the server from the root directory. The simplest way is to ensure the `.env` file exists at the project root.
 
-5.  **Run the FastAPI server**:
+3.  **Create the `.env` file**:
+    Create a `.env` file with your production environment variables.
     ```bash
-    uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    nano .env
     ```
+    Paste your production secrets (e.g., `SECRET_KEY`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`).
 
-#### Running the Frontend
-
-1.  **Navigate to the frontend directory** (in a new terminal):
+4.  **Create the `docker-compose.prod.yml` file**:
+    This file pulls the images from ECR.
     ```bash
-    cd frontend
+    nano docker-compose.prod.yml
     ```
-2.  **Install dependencies**:
+    Paste the following content into the file. **Remember to replace the AWS Account ID and region with your own.**
+
+    ```yaml
+    # docker-compose.prod.yml 
+    version: '3.8'
+
+    services:
+      backend:
+        image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-backend:latest
+        env_file:
+          - ./.env
+        restart: always
+
+      frontend:
+        image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-frontend:latest
+        restart: always
+
+      nginx:
+        image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-nginx:latest
+        ports:
+          - "80:80" 
+        restart: always
+        depends_on:
+          - backend
+          - frontend
+    ```
+
+### Step 5: Launch the Application on EC2
+
+1.  **Pull the latest images**:
     ```bash
-    npm install
+    docker-compose -f docker-compose.prod.yml pull
     ```
-3.  **Run the Vite development server**:
+
+2.  **Start the services**:
     ```bash
-    npm run dev
+    docker-compose -f docker-compose.prod.yml up -d
     ```
-    The frontend will be accessible at `http://localhost:5173`.
 
-## Usage
-
-1.  **Login**: Use the default credentials (`user1` / `fake_password_1`) to log in.
-2.  **Upload Media**: Click or drag-and-drop an image or video file.
-3.  **Apply Filter**: Select a filter from the bar at the bottom.
-4.  **Download Result**: Once processing is complete, download the filtered media.
-5.  **My Library**: Access your personal media library to view, download, or clear files.
-
-## Assignment Criteria Status
-
-(This section is preserved from the original README for your reference)
-
-### Core criteria (20 marks)
--   [x] **CPU Intensive task (3 marks)**
--   [ ] **CPU load testing (2 marks)**
--   [x] **Data types (3 marks)**
--   [ ] **Containerize the app (3 marks)**
--   [ ] **Deploy the container (3 marks)**
--   [x] **REST API (3 marks)**
--   [x] **User login (3 marks)**
-
-### Additional criteria (10 marks)
--   [ ] **Extended API features (2.5 marks)**
--   [ ] **External APIs (2.5 marks)**
--   [x] **Additional types of data (2.5 marks)**
--   [x] **Custom processing (2.5 marks)**
--   [ ] **Infrastructure as code (2.5 marks)**
--   [x] **Web client (2.5 marks)**
-
-
-
-
-# 登入 EC2
-ssh -i [您的金鑰路徑] ubuntu@[您的EC2 IP]
-
-# 進入您存放設定檔的資料夾
-cd my-app
-
-# (推薦) 先拉取最新的映像，確保使用的是剛剛推送的版本
-docker-compose -f docker-compose.prod.yml pull
-
-# 啟動服務 (-d 參數代表在背景運行)
-docker-compose -f docker-compose.prod.yml up -d
-
-docker-compose -f docker-compose.prod.yml logs backend
-
-
-
-docker buildx build --platform linux/amd64 -t <您的 AWS 帳號 ID>.dkr.ecr.<您的區域>.amazonaws.com/filter-app-frontend:latest ./frontend --push
+3.  **Verify**:
+    The application should now be accessible via your EC2 instance's public IP address. You can check the logs to ensure everything is running correctly:
+    ```bash
+    # Check logs for a specific service (e.g., backend)
+    docker-compose -f docker-compose.prod.yml logs -f backend
+    ```

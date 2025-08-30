@@ -32,7 +32,7 @@ router = APIRouter(
     tags=["Authentication"],
 )
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 # --- Hardcoded User Verification --- #
 # In a real app, you'd hash passwords and compare hashes.
