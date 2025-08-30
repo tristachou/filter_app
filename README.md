@@ -169,8 +169,13 @@ The provided script builds multi-platform images and pushes them to ECR.
     docker-compose -f docker-compose.prod.yml up -d
     ```
 
-3.  **Verify**:
-    The application should now be accessible via your EC2 instance's public IP address. You can check the logs to ensure everything is running correctly:
+3.  **Access and Verify**:
+    The application should now be accessible via your EC2 instance's public IP address on port 80. Nginx serves the frontend and forwards API requests to the backend.
+
+    - **Application URL**: `http://<your-ec2-ip>`
+    - **API Docs URL**: `http://<your-ec2-ip>/docs`
+
+    You can check the logs to ensure everything is running correctly:
     ```bash
     # Check logs for a specific service (e.g., backend)
     docker-compose -f docker-compose.prod.yml logs -f backend
