@@ -5,9 +5,19 @@ const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('jwt_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  // Get the full tokens object from localStorage
+  const storedTokens = localStorage.getItem('authTokens');
+  
+  if (storedTokens) {
+    try {
+      const tokens = JSON.parse(storedTokens);
+      // The access token is typically named AccessToken in the Cognito response
+      if (tokens && tokens.AccessToken) {
+        config.headers.Authorization = `Bearer ${tokens.AccessToken}`;
+      }
+    } catch (e) {
+      console.error("Could not parse auth tokens from localStorage", e);
+    }
   }
   return config;
 }, (error) => {

@@ -1,8 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useAuth } from '../AuthContext';
 
-// Note: The actual logic (state and handlers) will be passed down from App.jsx
-// This component is primarily for rendering the UI (a "dumb" component).
-function LoginView({ handleLogin, username, setUsername, password, setPassword, loginError }) {
+function LoginView() {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const { login } = useAuth();
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError('');
+    try {
+      await login(username, password);
+      // On successful login, the App component will automatically re-render
+      // to show the AppView, so no navigation logic is needed here.
+    } catch (error) {
+      setLoginError(error.message || 'Invalid credentials. Please try again.');
+      console.error('Login failed:', error);
+    }
+  };
+
   return (
     <div id="login-view" className="view">
       <div className="card login-card">

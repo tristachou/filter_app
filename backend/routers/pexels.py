@@ -1,14 +1,20 @@
 
 import os
 import httpx
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from dotenv import load_dotenv
 from enum import Enum
+
+from routers.auth import get_current_user
 
 # Load environment variables from .env file
 load_dotenv()
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/pexels",
+    tags=["Pexels"],
+    dependencies=[Depends(get_current_user)]
+)
 
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY")
 PEXELS_PHOTOS_URL = "https://api.pexels.com/v1/search"

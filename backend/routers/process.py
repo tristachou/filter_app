@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import Annotated
+from typing import Dict
 from pathlib import Path
 import uuid
 
 # App-specific imports
-from models.schemas import ProcessRequest, ProcessResponse, User, MediaItemInDB
+from models.schemas import ProcessRequest, ProcessResponse, MediaItemInDB
 from routers.auth import get_current_user
 from utils.database import load_db, save_db, get_media_by_id, get_filter_by_id, add_media_item, ROOT_DIR
 from services.process_media import apply_lut_to_image, apply_lut_to_video
@@ -23,17 +23,18 @@ PROCESSED_STORAGE_PATH.mkdir(parents=True, exist_ok=True) # Ensure directory exi
 @router.post("/", response_model=ProcessResponse)
 async def apply_filter_to_media(
     request: ProcessRequest,
-    current_user: Annotated[User, Depends(get_current_user)]
+    user_claims: Dict = Depends(get_current_user)
 ):
     """
     Applies a LUT filter to a media file using FFmpeg, saves the result,
     creates a new database entry for it, and returns the new media ID.
     """
     db = load_db()
+    user_id = user_claims.get("sub")
 
     # --- 1. Validate Inputs ---
     media_item = get_media_by_id(db, request.media_id)
-    if not media_item or media_item["owner_id"] != str(current_user.id):
+    if not media_item or media_item["owner_id"] != str(user_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media item not found or access denied.")
 
     filter_item = get_filter_by_id(db, request.filter_id)
@@ -41,7 +42,7 @@ async def apply_filter_to_media(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Filter item not found.")
 
     is_default_filter = filter_item.get("filter_type") == "default"
-    is_filter_owner = str(current_user.id) == filter_item.get("owner_id")
+    is_filter_owner = str(user_id) == filter_item.get("owner_id")
     if not is_default_filter and not is_filter_owner:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to use this filter.")
 
@@ -49,10 +50,8 @@ async def apply_filter_to_media(
     input_media_path = ROOT_DIR / media_item["storage_path"]
     lut_file_path = ROOT_DIR / filter_item["storage_path"]
     
-    # Generate a unique name for the output file
     file_suffix = Path(media_item["original_filename"]).suffix
     output_filename = f"processed_{uuid.uuid4()}{file_suffix}"
-    # Ensure the output path is absolute from the start
     output_media_path = ROOT_DIR / PROCESSED_STORAGE_PATH / output_filename
 
     # --- 3. Execute Processing Logic ---
@@ -69,7 +68,6 @@ async def apply_filter_to_media(
         else:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unsupported media type: {media_type}")
     except Exception as e:
-        # Catch potential errors from the processing script
         print(f"Error during media processing: {e}")
         raise HTTPException(status_code=500, detail="A critical error occurred during media processing.")
 
@@ -78,21 +76,16 @@ async def apply_filter_to_media(
 
     print(f"[PROCESSING FINISHED] Output saved to {output_media_path}")
 
-    # --- Increment filter usage count for the current user ---
-    # Find the user in the database's user list
-    for user_data in db["users"].values():
-        if user_data["id"] == str(current_user.id):
-            # Ensure filter_usage exists and is a dictionary
-            if "filter_usage" not in user_data or not isinstance(user_data["filter_usage"], dict):
-                user_data["filter_usage"] = {}
-            
-            filter_id_str = str(request.filter_id)
-            user_data["filter_usage"][filter_id_str] = user_data["filter_usage"].get(filter_id_str, 0) + 1
-            break # User found and updated, exit loop
+    # TODO: Re-implement filter usage tracking.
+    # The previous implementation modified a local user database which is now obsolete.
+    # A new system would require a separate database to store app-specific user metadata,
+    # linked by the Cognito user ID (the 'sub' claim).
+    # For now, this functionality is disabled.
+    # --- Increment filter usage count block removed ---
 
     # --- 4. Save New Media Item to Database ---
     processed_media_item = MediaItemInDB(
-        owner_id=current_user.id,
+        owner_id=user_id,
         original_filename=f"{Path(media_item['original_filename']).stem}_processed{file_suffix}",
         storage_path=str(output_media_path.relative_to(ROOT_DIR)), # Store relative path
         media_type=media_type,
