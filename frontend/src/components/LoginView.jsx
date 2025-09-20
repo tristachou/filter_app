@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../AuthContext';
 
-function LoginView() {
+function LoginView({ showSignUp }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -47,6 +47,9 @@ function LoginView() {
           <button type="submit" className="btn btn-primary">Login</button>
         </form>
         {loginError && <p id="login-error" className="error-message">{loginError}</p>}
+        <p className="switch-view-link">
+          Don't have an account? <a href="#" onClick={(e) => { e.preventDefault(); showSignUp(); }}>Sign Up</a>
+        </p>
       </div>
     </div>
   );

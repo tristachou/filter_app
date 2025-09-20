@@ -230,8 +230,8 @@ p { color: var(--text-secondary); line-height: 1.5; }
 }
 .btn-icon:hover { color: var(--text-primary); }
 
-#login-form { display: flex; flex-direction: column; gap: 16px; }
-#login-form input {
+#login-form, #signup-form, #confirm-form { display: flex; flex-direction: column; gap: 16px; }
+#login-form input, #signup-form input, #confirm-form input {
     background-color: var(--background-color);
     border: 1px solid var(--border-color);
     border-radius: 8px;
@@ -240,8 +240,8 @@ p { color: var(--text-secondary); line-height: 1.5; }
     color: var(--text-primary);
     width: 100%;
 }
-#login-form input:focus { border-color: var(--accent-color); outline: none; }
-#login-form .btn-primary { margin-top: 8px; }
+#login-form input:focus, #signup-form input:focus, #confirm-form input:focus { border-color: var(--accent-color); outline: none; }
+#login-form .btn-primary, #signup-form .btn-primary, #confirm-form .btn-primary { margin-top: 8px; }
 
 /* ======================================================================== */
 /* 5. Main App Components                                                */

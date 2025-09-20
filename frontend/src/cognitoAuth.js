@@ -2,6 +2,8 @@ import {
   CognitoIdentityProviderClient, 
   InitiateAuthCommand, 
   RespondToAuthChallengeCommand,
+  SignUpCommand,
+  ConfirmSignUpCommand,
   AuthFlowType 
 } from "@aws-sdk/client-cognito-identity-provider";
 import HmacSHA256 from 'crypto-js/hmac-sha256';
@@ -88,5 +90,53 @@ export async function signIn(username, password) {
     console.error("Cognito sign-in error object:", error); // Log the full error object
     // Re-throw a more user-friendly error message
     throw new Error(error.message || "An error occurred during sign-in.");
+  }
+}
+
+/**
+ * Registers a new user in the Cognito User Pool.
+ * @param {string} username - The desired username.
+ * @param {string} password - The desired password.
+ * @param {string} email - The user's email address.
+ * @returns {Promise<object>} The response from Cognito.
+ */
+export async function signUp(username, password, email) {
+  const command = new SignUpCommand({
+    ClientId: CLIENT_ID,
+    Username: username,
+    Password: password,
+    SecretHash: getSecretHash(username),
+    UserAttributes: [{ Name: "email", Value: email }],
+  });
+
+  try {
+    const response = await client.send(command);
+    return response;
+  } catch (error) {
+    console.error("Cognito sign-up error:", error);
+    throw new Error(error.message || "An error occurred during sign-up.");
+  }
+}
+
+/**
+ * Confirms a user's registration with a confirmation code.
+ * @param {string} username - The username of the user to confirm.
+ * @param {string} confirmationCode - The code sent to the user's email.
+ * @returns {Promise<object>} The response from Cognito.
+ */
+export async function confirmSignUp(username, confirmationCode) {
+  const command = new ConfirmSignUpCommand({
+    ClientId: CLIENT_ID,
+    Username: username,
+    ConfirmationCode: confirmationCode,
+    SecretHash: getSecretHash(username),
+  });
+
+  try {
+    const response = await client.send(command);
+    return response;
+  } catch (error) {
+    console.error("Cognito confirmation error:", error);
+    throw new Error(error.message || "An error occurred during confirmation.");
   }
 }
