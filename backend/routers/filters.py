@@ -19,29 +19,30 @@ router = APIRouter(
 async def upload_filter(user_claims: Dict = Depends(get_current_user), file: UploadFile = File(...)):
     """
     Handles the upload of a custom filter file (e.g., a .cube LUT file) to S3.
-    Saves the file to S3 and its metadata, marking it as a 'custom' filter owned by the user.
+    Saves the file to the appropriate S3 path based on user role (public vs user).
     """
     if not file.filename.endswith('.cube'):
         raise HTTPException(status_code=400, detail="Invalid file type. Only .cube files are accepted.")
 
-    # Extract user information from Cognito claims
     user_id = user_claims.get("sub")
     user_groups = user_claims.get("cognito:groups", [])
 
-    # Construct S3 object key: filters/{user_id}/{uuid}.cube
-    object_key = f"filters/{user_id}/{uuid.uuid4()}.cube"
+    # Determine S3 path and metadata based on user role
+    if "admin" in user_groups:
+        # Admin-uploaded filters become new default filters
+        object_key = f"filters/public/{uuid.uuid4()}.cube"
+        filter_type = "default"
+        owner_id = None
+    else:
+        # User-uploaded filters are custom and private
+        object_key = f"filters/user/{user_id}/{uuid.uuid4()}.cube"
+        filter_type = "custom"
+        owner_id = user_id
 
     # Upload file to S3
     upload_file_to_s3(file.file, object_key, file.content_type)
 
     # Create metadata record for the filter
-    filter_type = 'custom'
-    owner_id = user_id
-
-    if "admin" in user_groups:
-        filter_type = "default"
-        owner_id = None
-
     filter_item = FilterItemInDB(
         name=Path(file.filename).stem,
         storage_path=object_key, # Store S3 object key
