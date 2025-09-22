@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status, Query
-from typing import List, Annotated, Dict, Any
+from typing import Dict, Any
 import uuid
 from pathlib import Path
 
 from models.schemas import FilterItemInDB
 from routers.auth import get_current_user
 from utils.database import load_db, save_db, add_filter_item, get_filters_for_user, get_filter_by_id
+from utils.s3_client import upload_file_to_s3
 
 # --- Router --- #
 router = APIRouter(
@@ -14,31 +15,24 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)]
 )
 
-# Define storage path
-STORAGE_PATH = Path("storage/filter_uploads")
-STORAGE_PATH.mkdir(parents=True, exist_ok=True) # Ensure directory exists
-
 @router.post("/upload", response_model=FilterItemInDB, status_code=status.HTTP_201_CREATED)
 async def upload_filter(user_claims: Dict = Depends(get_current_user), file: UploadFile = File(...)):
     """
-    Handles the upload of a custom filter file (e.g., a .cube LUT file).
-    Saves the file and its metadata, marking it as a 'custom' filter owned by the user.
+    Handles the upload of a custom filter file (e.g., a .cube LUT file) to S3.
+    Saves the file to S3 and its metadata, marking it as a 'custom' filter owned by the user.
     """
     if not file.filename.endswith('.cube'):
         raise HTTPException(status_code=400, detail="Invalid file type. Only .cube files are accepted.")
 
-    unique_filename = f"{uuid.uuid4()}.cube"
-    storage_path = STORAGE_PATH / unique_filename
-
-    try:
-        with open(storage_path, "wb") as buffer:
-            buffer.write(await file.read())
-    except IOError as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save file: {e}")
-
     # Extract user information from Cognito claims
     user_id = user_claims.get("sub")
     user_groups = user_claims.get("cognito:groups", [])
+
+    # Construct S3 object key: filters/{user_id}/{uuid}.cube
+    object_key = f"filters/{user_id}/{uuid.uuid4()}.cube"
+
+    # Upload file to S3
+    upload_file_to_s3(file.file, object_key, file.content_type)
 
     # Create metadata record for the filter
     filter_type = 'custom'
@@ -50,7 +44,7 @@ async def upload_filter(user_claims: Dict = Depends(get_current_user), file: Upl
 
     filter_item = FilterItemInDB(
         name=Path(file.filename).stem,
-        storage_path=str(storage_path),
+        storage_path=object_key, # Store S3 object key
         filter_type=filter_type,
         owner_id=owner_id
     )
