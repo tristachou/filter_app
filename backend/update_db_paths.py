@@ -47,10 +47,13 @@ def update_database_paths():
     print("Scanning filter items for paths to update...")
     for filter_id, filter_item in filter_items.items():
         storage_path = filter_item.get("storage_path")
-        if storage_path and storage_path.startswith("assets/luts/"):
+        # Condition: Find paths that start with "filters/" but are not the new "filters/public/" or "filters/user/"
+        if storage_path and storage_path.startswith("filters/") and not storage_path.startswith("filters/public/") and not storage_path.startswith("filters/user/"):
             original_path = storage_path
             file_name = os.path.basename(storage_path)
-            new_path = f"filters/{file_name}"
+            
+            # We assume these are default/public filters that need to be moved
+            new_path = f"filters/public/{file_name}"
             
             # Update the value in the dictionary
             filter_item["storage_path"] = new_path

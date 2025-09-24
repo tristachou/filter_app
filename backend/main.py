@@ -31,18 +31,7 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-# --- Startup Event --- #
-@app.on_event("startup")
-def on_startup():
-    """
-    This function runs when the application starts.
-    It ensures that the necessary storage directories exist.
-    """
-    print("Application starting up...")
-    Path("storage/media_uploads").mkdir(parents=True, exist_ok=True)
-    Path("storage/filter_uploads").mkdir(parents=True, exist_ok=True)
-    Path("storage/processed_output").mkdir(parents=True, exist_ok=True)
-    print("Storage directories verified.")
+
 
 # --- API Routers --- #
 # Note: The order of routing is important. API routers should come before the static files mount.

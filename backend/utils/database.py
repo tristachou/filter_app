@@ -1,168 +1,154 @@
-import json
-from pathlib import Path
-from typing import Dict, Any, Union
-from uuid import UUID
+
 import os
+import boto3
+from boto3.dynamodb.conditions import Key, Attr
+from typing import Dict, Any, Union, List
+from uuid import UUID
 
-from models.schemas import MediaItemInDB, FilterItemInDB, User
+# --- DynamoDB Setup ---
+# Using an environment variable for the prefix is a good practice for production
+STUDENT_ID_PREFIX = "n11696630-" # Hardcoding to ensure consistency
+AWS_REGION = os.getenv("AWS_REGION", "ap-southeast-2")
 
-# Define the root directory of the application
-# This is set to the parent directory of the current file (utils)
-ROOT_DIR = Path(__file__).parent.parent
-DB_PATH = ROOT_DIR / "db.json"
+dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
 
-def load_db() -> Dict[str, Any]:
-    """
-    Loads the JSON database from the file system.
-    If the database file does not exist, it initializes it with default users.
-    """
-    if not DB_PATH.exists():
-        print("Database file not found. Initializing with default data.")
-        # Hardcoded users for initial setup
-        users = [
-            {"id": "a7b8b5e0-5c6e-4e8a-9b9a-6a2b3c4d5e6f", "username": "user1", "hashed_password": "fake_password_1", "role": "admin"},
-            {"id": "b8c9c6f1-6d7f-5f9b-a0a0-7b3c4d5e6f7f", "username": "user2", "hashed_password": "fake_password_2", "role": "user"},
-        ]
-        db_data = {
-            "users": {user["id"]: user for user in users},
-            "media_items": {},
-            "filter_items": {},
-        }
-
-        _seed_default_filters(db_data)
-    
-    
-        save_db(db_data)
-        return db_data
-    
-    with open(DB_PATH, "r") as f:
-        return json.load(f)
-
-def save_db(data: Dict[str, Any]):
-    """
-    Saves the given dictionary to the JSON database file.
-    """
-    with open(DB_PATH, "w") as f:
-        # Use a custom JSON encoder to handle UUID and other complex types
-        json.dump(data, f, indent=4, default=str)
-
-# --- Media Item Functions ---
-
-def get_media_by_id(db: Dict[str, Any], media_id: UUID) -> Union[Dict[str, Any], None]:
-    """Retrieves a media item by its ID."""
-    return db["media_items"].get(str(media_id))
-
-def add_media_item(db: Dict[str, Any], media_item: MediaItemInDB) -> MediaItemInDB:
-    """Adds a new media item to the database."""
-    db["media_items"][str(media_item.id)] = media_item.model_dump()
-    return media_item
-
-def get_user_media(db: Dict[str, Any], user_id: UUID) -> list[Dict[str, Any]]:
-    """Retrieves all PROCESSED media items for a specific user."""
-    user_items = []
-    for item in db["media_items"].values():
-        # Only return items that belong to the user AND are processed files
-        
-        if item["owner_id"] == str(user_id):
-            user_items.append(item)
-    return user_items
-
-def delete_user_media(db: Dict[str, Any], user_id: UUID) -> list[str]:
-    """
-    Deletes all media items for a specific user from the database.
-    Returns a list of storage paths for the files to be deleted from disk.
-    """
-    items_to_delete = [item for item in db["media_items"].values() if item["owner_id"] == str(user_id)]
-    
-    paths_to_delete = [item["storage_path"] for item in items_to_delete]
-    
-    for item in items_to_delete:
-        del db["media_items"][item["id"]]
-        
-    return paths_to_delete
-
-def _seed_default_filters(db: Dict[str, Any]):
-    """
-    Scans the default LUTs directory and adds any new filters to the database.
-    This is intended to be run at application startup.
-    """
-    default_luts_path = ROOT_DIR / "assets" / "luts"
-    if not default_luts_path.exists():
-        return 
-    existing_paths = {item["storage_path"] for item in db["filter_items"].values()}
-    
-
-    for lut_file in default_luts_path.glob("*"):
-      
-        if lut_file.suffix.lower() == '.cube':
-            
-            relative_path = str(lut_file.relative_to(ROOT_DIR))
-
-            if relative_path not in existing_paths:
-                print(f"Found new default filter, adding to DB: {lut_file.name}")
-                filter_item = FilterItemInDB(
-                    name=lut_file.stem,  
-                    storage_path=relative_path,
-                    filter_type="default",
-                    owner_id=None
-                )
-                add_filter_item(db, filter_item)
-
-
-
-# --- Filter Item Functions ---
-
-def get_filter_by_id(db: Dict[str, Any], filter_id: UUID) -> Union[Dict[str, Any], None]:
-    """Retrieves a filter item by its ID."""
-    return db["filter_items"].get(str(filter_id))
-
-def add_filter_item(db: Dict[str, Any], filter_item: FilterItemInDB) -> FilterItemInDB:
-    """Adds a new filter item to the database."""
-    db["filter_items"][str(filter_item.id)] = filter_item.model_dump()
-    return filter_item
-
-def get_filters_for_user(db: Dict[str, Any], user_id: UUID, user_filter_usage: Dict[str, int]) -> list[Dict[str, Any]]:
-    """
-    Retrieves all default filters plus all filters owned by the specified user,
-    sorted by the user's usage count in descending order.
-    """
-    visible_filters = []
-    for item in db["filter_items"].values():
-        # A filter is visible if it's a default filter OR if the user is the owner
-        if item.get("filter_type") == "default" or item.get("owner_id") == str(user_id):
-            # Create a copy of the item to avoid modifying the original db object
-            item_copy = item.copy()
-            
-            # Get user-specific usage count, default to 0 if not found
-            filter_id_str = str(item_copy["id"]) # Ensure filter ID is a string for dictionary lookup
-            item_usage_count = user_filter_usage.get(filter_id_str, 0)
-            
-            # Add usage count to the item_copy for sorting purposes (temporarily)
-            item_copy["_user_usage_count"] = item_usage_count
-            visible_filters.append(item_copy)
-            
-    # Sort filters by user-specific usage count in descending order
-    visible_filters.sort(key=lambda x: x.get("_user_usage_count", 0), reverse=True)
-    
-    # Remove the temporary _user_usage_count key before returning
-    for item in visible_filters:
-        if "_user_usage_count" in item:
-            del item["_user_usage_count"]
-            
-    return visible_filters
+USERS_TABLE = dynamodb.Table(f"{STUDENT_ID_PREFIX}users")
+MEDIA_ITEMS_TABLE = dynamodb.Table(f"{STUDENT_ID_PREFIX}media_items")
+FILTER_ITEMS_TABLE = dynamodb.Table(f"{STUDENT_ID_PREFIX}filter_items")
 
 # --- User Functions ---
 
-def get_user_by_username(db: Dict[str, Any], username: str) -> Union[User, None]:
-    """Retrieves a user by their username."""
-    for user_data in db["users"].values():
-        if user_data["username"] == username:
-            return User(**user_data)
-    return None
+def get_user_by_id(user_id: UUID) -> Union[Dict[str, Any], None]:
+    """Retrieves a user by their ID from DynamoDB."""
+    try:
+        response = USERS_TABLE.get_item(Key={'id': str(user_id)})
+        return response.get('Item')
+    except Exception as e:
+        print(f"Error getting user {user_id}: {e}")
+        return None
 
-def get_user_by_id(db: Dict[str, Any], user_id: UUID) -> Union[User, None]:
-    """Retrieves a user by their ID."""
-    user_data = db["users"].get(str(user_id))
-    if user_data:
-        return User(**user_data)
-    return None
+def get_user_by_username(username: str) -> Union[Dict[str, Any], None]:
+    """Retrieves a user by their username using a scan operation."""
+    # Note: A scan is inefficient for large tables. For production, a GSI on 'username' would be better.
+    try:
+        response = USERS_TABLE.scan(FilterExpression=Attr('username').eq(username))
+        items = response.get('Items', [])
+        return items[0] if items else None
+    except Exception as e:
+        print(f"Error scanning for user {username}: {e}")
+        return None
+
+# --- Media Item Functions ---
+
+def get_media_by_id(media_id: UUID) -> Union[Dict[str, Any], None]:
+    """Retrieves a single media item by its ID from DynamoDB."""
+    try:
+        response = MEDIA_ITEMS_TABLE.get_item(Key={'id': str(media_id)})
+        return response.get('Item')
+    except Exception as e:
+        print(f"Error getting media item {media_id}: {e}")
+        return None
+
+from datetime import datetime
+
+def _serialize_item_for_dynamodb(obj: Any) -> Any:
+    """Recursively converts special types in a dictionary or list to DynamoDB-compatible formats."""
+    if isinstance(obj, dict):
+        return {k: _serialize_item_for_dynamodb(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_serialize_item_for_dynamodb(i) for i in obj]
+    if isinstance(obj, UUID):
+        return str(obj)
+    if isinstance(obj, datetime):
+        return obj.isoformat() # Convert datetime to ISO 8601 string
+    return obj
+
+def add_media_item(media_item_dict: Dict[str, Any]):
+    """Adds a new media item to the media_items table in DynamoDB."""
+    try:
+        # Convert any special types to strings before sending to DynamoDB
+        item_to_add = _serialize_item_for_dynamodb(media_item_dict)
+        MEDIA_ITEMS_TABLE.put_item(Item=item_to_add)
+    except Exception as e:
+        print(f"Error adding media item: {e}")
+        # Re-raise to be caught by FastAPI error handling
+        raise
+
+def get_user_media(user_id: str) -> List[Dict[str, Any]]:
+    """Retrieves all media items for a specific user using the GSI."""
+    try:
+        response = MEDIA_ITEMS_TABLE.query(
+            IndexName='OwnerIdIndex',
+            KeyConditionExpression=Key('owner_id').eq(user_id)
+        )
+        return response.get('Items', [])
+    except Exception as e:
+        print(f"Error querying user media for {user_id}: {e}")
+        return []
+
+def delete_user_media(user_id: str) -> List[str]:
+    """Finds all media for a user, collects their S3 paths, and deletes the items from DynamoDB."""
+    paths_to_delete = []
+    items_to_delete_keys = []
+    
+    # Find all media items for the user (both original and processed)
+    user_media_items = get_user_media(user_id)
+    
+    for item in user_media_items:
+        paths_to_delete.append(item['storage_path'])
+        items_to_delete_keys.append({'id': item['id']})
+
+    # Delete items from DynamoDB in a batch for efficiency
+    if items_to_delete_keys:
+        try:
+            with MEDIA_ITEMS_TABLE.batch_writer() as batch:
+                for key in items_to_delete_keys:
+                    batch.delete_item(Key=key)
+        except Exception as e:
+            print(f"Error batch deleting media items from DynamoDB: {e}")
+            # If DB deletion fails, do not return paths to prevent orphaning S3 files
+            return []
+            
+    return paths_to_delete
+
+# --- Filter Item Functions ---
+
+def get_filter_by_id(filter_id: UUID) -> Union[Dict[str, Any], None]:
+    """Retrieves a single filter item by its ID from DynamoDB."""
+    try:
+        response = FILTER_ITEMS_TABLE.get_item(Key={'id': str(filter_id)})
+        return response.get('Item')
+    except Exception as e:
+        print(f"Error getting filter item {filter_id}: {e}")
+        return None
+
+def add_filter_item(filter_item_dict: Dict[str, Any]):
+    """Adds a new filter item to the filter_items table in DynamoDB."""
+    try:
+        item_to_add = _serialize_item_for_dynamodb(filter_item_dict)
+        FILTER_ITEMS_TABLE.put_item(Item=item_to_add)
+    except Exception as e:
+        print(f"Error adding filter item: {e}")
+        raise
+
+def get_filters_for_user(user_id: UUID, **kwargs) -> List[Dict[str, Any]]:
+    """Retrieves all default filters plus all filters owned by the specified user."""
+    try:
+        # 1. Get all default filters using the GSI
+        default_filters_response = FILTER_ITEMS_TABLE.query(
+            IndexName='FilterTypeIndex',
+            KeyConditionExpression=Key('filter_type').eq('default')
+        )
+        visible_filters = default_filters_response.get('Items', [])
+
+        # 2. Get user's own custom filters using a scan
+        # Note: Inefficient for many custom filters. A GSI on owner_id would be better.
+        custom_filters_response = FILTER_ITEMS_TABLE.scan(
+            FilterExpression=Attr('owner_id').eq(str(user_id))
+        )
+        visible_filters.extend(custom_filters_response.get('Items', []))
+        
+        return visible_filters
+    except Exception as e:
+        print(f"Error getting filters for user {user_id}: {e}")
+        return []

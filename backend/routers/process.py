@@ -3,12 +3,14 @@ from typing import Dict
 from pathlib import Path
 import uuid
 import tempfile
-import os # Import os for os.unlink
+import os
 
 # App-specific imports
 from models.schemas import ProcessRequest, ProcessResponse, MediaItemInDB
 from routers.auth import get_current_user
-from utils.database import load_db, save_db, get_media_by_id, get_filter_by_id, add_media_item
+# Import the new DynamoDB-based functions
+from utils.database import get_media_by_id, get_filter_by_id, add_media_item
+# This service should only contain the core ffmpeg logic
 from services.process_media import apply_lut_to_image, apply_lut_to_video
 from utils.s3_client import s3_client, S3_BUCKET_NAME, upload_file_to_s3
 
@@ -25,18 +27,17 @@ async def apply_filter_to_media(
     user_claims: Dict = Depends(get_current_user)
 ):
     """
-    Applies a LUT filter to a media file using FFmpeg, saves the result to S3,
-    creates a new database entry for it, and returns the new media ID.
+    Applies a LUT filter to a media file, saves the result to S3,
+    and creates a new database entry for it in DynamoDB.
     """
-    db = load_db()
     user_id = user_claims.get("sub")
 
-    # --- 1. Validate Inputs ---
-    media_item = get_media_by_id(db, request.media_id)
+    # --- 1. Validate Inputs from DynamoDB ---
+    media_item = get_media_by_id(request.media_id)
     if not media_item or media_item["owner_id"] != str(user_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media item not found or access denied.")
 
-    filter_item = get_filter_by_id(db, request.filter_id)
+    filter_item = get_filter_by_id(request.filter_id)
     if not filter_item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Filter item not found.")
 
@@ -51,22 +52,19 @@ async def apply_filter_to_media(
     temp_output_file = None
 
     try:
-        # Download input media from S3 to a temporary file
         s3_input_key = media_item["storage_path"]
         file_suffix = Path(media_item["original_filename"]).suffix
         temp_input_file = tempfile.NamedTemporaryFile(delete=False, suffix=file_suffix)
         s3_client.download_fileobj(S3_BUCKET_NAME, s3_input_key, temp_input_file)
-        temp_input_file.close() # Close to ensure content is flushed before ffmpeg reads
+        temp_input_file.close()
 
-        # Download filter from S3 to a temporary file
         s3_filter_key = filter_item["storage_path"]
         temp_filter_file = tempfile.NamedTemporaryFile(delete=False, suffix=".cube")
         s3_client.download_fileobj(S3_BUCKET_NAME, s3_filter_key, temp_filter_file)
-        temp_filter_file.close() # Close to ensure content is flushed before ffmpeg reads
+        temp_filter_file.close()
 
-        # Prepare temporary output file
         temp_output_file = tempfile.NamedTemporaryFile(delete=False, suffix=file_suffix)
-        temp_output_file.close() # Close to ensure ffmpeg can write to it
+        temp_output_file.close()
 
         # --- 3. Execute Processing Logic ---
         print(f"[PROCESSING START] Applying filter {filter_item['name']} to {media_item['original_filename']}")
@@ -88,26 +86,21 @@ async def apply_filter_to_media(
 
         # --- 4. Upload Processed Media to S3 ---
         s3_output_key = f"processed/{user_id}/{uuid.uuid4()}{file_suffix}"
-        with open(temp_output_file.name, 'rb') as f: # Re-open for reading to upload
+        with open(temp_output_file.name, 'rb') as f:
             upload_file_to_s3(f, s3_output_key, media_type)
         print(f"[UPLOADED TO S3] Processed media uploaded to {s3_output_key}")
 
-        # TODO: Re-implement filter usage tracking.
-        # The previous implementation modified a local user database which is now obsolete.
-        # A new system would require a separate database to store app-specific user metadata,
-        # linked by the Cognito user ID (the 'sub' claim).
-        # For now, this functionality is disabled.
-        # --- Increment filter usage count block removed ---
-
-        # --- 5. Save New Media Item to Database ---
+        # --- 5. Save New Media Item to DynamoDB ---
+        # Note: The logic to create a *new* item rather than overwriting is now handled here.
         processed_media_item = MediaItemInDB(
             owner_id=user_id,
             original_filename=f"{Path(media_item['original_filename']).stem}_processed{file_suffix}",
-            storage_path=s3_output_key, # Store S3 object key
+            storage_path=s3_output_key,
             media_type=media_type,
+            is_processed=True, # Flag to distinguish from original uploads
+            original_media_id=media_item["id"] # Link back to the original media
         )
-        add_media_item(db, processed_media_item)
-        save_db(db)
+        add_media_item(processed_media_item.model_dump())
 
         # --- 6. Return Response with New ID ---
         return ProcessResponse(

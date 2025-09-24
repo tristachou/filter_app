@@ -20,7 +20,7 @@ def upload_luts_to_s3():
     # 2. Define local and remote paths
     # The script is in /backend, so assets/luts is relative to the current dir
     local_luts_dir = os.path.join(os.path.dirname(__file__), "assets", "luts")
-    s3_prefix = "filters/"
+    s3_prefix = "filters/public/"
 
     if not os.path.isdir(local_luts_dir):
         print(f"\033[91mError: Local LUTs directory not found at {local_luts_dir}\033[0m")
