@@ -1,8 +1,8 @@
 
-from dotenv import load_dotenv
+from config import load_config
 
-# Load environment variables from .env file in the parent directory
-load_dotenv()
+# Load all configuration from AWS at startup
+load_config()
 
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware

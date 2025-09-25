@@ -2,13 +2,9 @@
 import os
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Depends
-from dotenv import load_dotenv
 from enum import Enum
 
 from routers.auth import get_current_user
-
-# Load environment variables from .env file
-load_dotenv()
 
 router = APIRouter(
     prefix="/pexels",

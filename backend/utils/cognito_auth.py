@@ -1,14 +1,15 @@
 
+import os
 import requests
 import time
 from jose import jwk, jwt
 from jose.exceptions import JOSEError
 from fastapi import HTTPException, status
 
-# Cognito User Pool settings from user
-REGION = "ap-southeast-2"
-USER_POOL_ID = "ap-southeast-2_kddUAod7A"
-APP_CLIENT_ID = "4h9hjhn6bfujbskpocnd9mticd"
+# Cognito User Pool settings loaded from environment variables
+REGION = os.getenv("COGNITO_REGION", "ap-southeast-2")
+USER_POOL_ID = os.getenv("COGNITO_USER_POOL_ID")
+APP_CLIENT_ID = os.getenv("COGNITO_APP_CLIENT_ID")
 
 # Construct the URL for the JSON Web Key Set (JWKS)
 JWKS_URL = f"https://cognito-idp.{REGION}.amazonaws.com/{USER_POOL_ID}/.well-known/jwks.json"

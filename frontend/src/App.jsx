@@ -4,27 +4,46 @@ import LoginView from './components/LoginView';
 import AppView from './components/AppView';
 import SignUpView from './components/SignUpView';
 import ConfirmSignUpView from './components/ConfirmSignUpView';
+import MfaChallengeView from './components/MfaChallengeView'; // Import the new component
 import './index.css';
 
 function App() {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, mfaRequired, mfaChallenge, verifyMfa } = useAuth();
   const [viewMode, setViewMode] = useState('login'); // 'login', 'signup', or 'confirm'
   const [usernameToConfirm, setUsernameToConfirm] = useState('');
 
   // Handlers to switch between views
-  const showSignUp = () => setViewMode('signup');
-  const showLogin = () => setViewMode('login');
+  const showSignUp = () => {
+    logout(); // Reset any pending auth state
+    setViewMode('signup');
+  }
+  const showLogin = () => {
+    logout(); // Reset any pending auth state
+    setViewMode('login');
+  }
   
   const handleSignUpSuccess = (username) => {
     setUsernameToConfirm(username);
     setViewMode('confirm');
   };
 
-  // If the user is authenticated, show the main app
+  // If the user is fully authenticated, show the main app
   if (isAuthenticated) {
     return (
       <div id="app-container">
         <AppView handleLogout={logout} />
+      </div>
+    );
+  }
+
+  // If MFA is required, show the MFA challenge view regardless of other view modes
+  if (mfaRequired) {
+    return (
+      <div id="app-container">
+        <MfaChallengeView 
+          onVerify={verifyMfa}
+          showLogin={showLogin}
+        />
       </div>
     );
   }

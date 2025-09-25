@@ -2,9 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import apiClient from '../apiClient';
 import FilterBar from './FilterBar';
 import MediaLibraryModal from './MediaLibraryModal';
-import SearchModal from './SearchModal'; 
+import SearchModal from './SearchModal';
+import MfaSetupView from './MfaSetupView'; // Import the MFA setup component
+import { useAuth } from '../AuthContext'; // Import useAuth
 
 function AppView({ handleLogout }) {
+  const { isMfaEnabled, disableMfa } = useAuth(); // Get MFA status and functions
   const [filters, setFilters] = useState([]);
   const [selectedFilterId, setSelectedFilterId] = useState(null);
   const [uiState, setUiState] = useState('initial');
@@ -15,12 +18,24 @@ function AppView({ handleLogout }) {
   const [mediaItems, setMediaItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isMfaSetupOpen, setIsMfaSetupOpen] = useState(false); // State for MFA setup modal
 
   // --- ✨ PAGINATION STATE START ✨ ---
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const ITEMS_PER_PAGE = 10; // 和後端 limit 保持一致
   // --- ✨ PAGINATION STATE END ✨ ---
+
+  const handleDisableMfa = async () => {
+    if (window.confirm('Are you sure you want to disable Two-Factor Authentication?')) {
+      try {
+        await disableMfa();
+        alert('MFA has been disabled.');
+      } catch (error) {
+        alert(`Failed to disable MFA: ${error.message}`);
+      }
+    }
+  };
 
   const fetchFilters = useCallback(async (page) => {
     try {
@@ -293,8 +308,6 @@ function AppView({ handleLogout }) {
       </div>
       <div className="right-panel">
         <header className="app-header">
-          
-          
             <button id="media-library-button" className="btn btn-secondary" onClick={handleOpenLibrary}>
               <i className="fas fa-images"></i>
               <span>My Library</span>
@@ -315,11 +328,24 @@ function AppView({ handleLogout }) {
               />
             </div>
 
-            <button id="logout-button" className="btn btn-secondary" onClick={handleLogout}>
-              <i className="fas fa-sign-out-alt"></i>
-              <span>Logout</span>
-            </button>
-          
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              {isMfaEnabled ? (
+                <button onClick={handleDisableMfa} className="btn btn-secondary">
+                  <i className="fas fa-shield-alt"></i>
+                  <span>Disable MFA</span>
+                </button>
+              ) : (
+                <button onClick={() => setIsMfaSetupOpen(true)} className="btn btn-secondary">
+                  <i className="fas fa-shield-alt"></i>
+                  <span>Setup MFA</span>
+                </button>
+              )}
+
+              <button id="logout-button" className="btn btn-secondary" onClick={handleLogout}>
+                <i className="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+              </button>
+            </div>
         </header>
 
         <main
@@ -338,6 +364,15 @@ function AppView({ handleLogout }) {
           onChange={(e) => handleFileSelect(e.target.files[0])}
         />
       </div>
+
+      {/* Modal for MFA Setup */}
+      {isMfaSetupOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <MfaSetupView closeView={() => setIsMfaSetupOpen(false)} />
+          </div>
+        </div>
+      )}
 
       <MediaLibraryModal
         isOpen={isLibraryOpen}

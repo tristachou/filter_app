@@ -4,6 +4,10 @@ import {
   RespondToAuthChallengeCommand,
   SignUpCommand,
   ConfirmSignUpCommand,
+  AssociateSoftwareTokenCommand,
+  VerifySoftwareTokenCommand,
+  SetUserMFAPreferenceCommand, // Add this command
+  GetUserCommand,
   AuthFlowType 
 } from "@aws-sdk/client-cognito-identity-provider";
 import HmacSHA256 from 'crypto-js/hmac-sha256';
@@ -29,10 +33,10 @@ function getSecretHash(username) {
 }
 
 /**
- * Authenticates a user with Cognito, handling the NEW_PASSWORD_REQUIRED challenge.
+ * Authenticates a user with Cognito, handling MFA and NEW_PASSWORD_REQUIRED challenges.
  * @param {string} username - The user's username.
  * @param {string} password - The user's temporary or permanent password.
- * @returns {Promise<object>} The AuthenticationResult object from Cognito, containing tokens.
+ * @returns {Promise<object>} The AuthenticationResult object from Cognito, or a challenge object.
  */
 export async function signIn(username, password) {
   const initialAuthCommand = new InitiateAuthCommand({
@@ -54,7 +58,16 @@ export async function signIn(username, password) {
       return initialResponse.AuthenticationResult;
     }
 
-    // Case 2: First-time login with temporary password, new password required
+    // Case 2: MFA challenge required
+    if (initialResponse.ChallengeName === 'SOFTWARE_TOKEN_MFA') {
+      console.log("Handling SOFTWARE_TOKEN_MFA challenge.");
+      return {
+        challengeName: 'SOFTWARE_TOKEN_MFA',
+        session: initialResponse.Session,
+      };
+    }
+
+    // Case 3: First-time login with temporary password, new password required
     if (initialResponse.ChallengeName === 'NEW_PASSWORD_REQUIRED') {
       console.log("Handling NEW_PASSWORD_REQUIRED challenge.");
       const newPassword = "MyNewPassword123!"; // Hardcoded new password
@@ -83,13 +96,46 @@ export async function signIn(username, password) {
       }
     }
 
-    // Case 3: Unexpected response from Cognito
+    // Case 4: Unexpected response from Cognito
     throw new Error("Authentication failed. Unexpected response from Cognito.");
 
   } catch (error) {
     console.error("Cognito sign-in error object:", error); // Log the full error object
     // Re-throw a more user-friendly error message
     throw new Error(error.message || "An error occurred during sign-in.");
+  }
+}
+
+/**
+ * Responds to the MFA challenge after initial sign-in.
+ * @param {string} username - The user's username.
+ * @param {string} mfaCode - The 6-digit code from the authenticator app.
+ * @param {string} session - The session string from the initial sign-in response.
+ * @returns {Promise<object>} The AuthenticationResult object from Cognito.
+ */
+export async function respondToMfaChallenge(username, mfaCode, session) {
+  const command = new RespondToAuthChallengeCommand({
+    ChallengeName: 'SOFTWARE_TOKEN_MFA',
+    ClientId: CLIENT_ID,
+    ChallengeResponses: {
+      USERNAME: username,
+      SOFTWARE_TOKEN_MFA_CODE: mfaCode,
+      SECRET_HASH: getSecretHash(username),
+    },
+    Session: session,
+  });
+
+  try {
+    const response = await client.send(command);
+    if (response.AuthenticationResult) {
+      console.log("Successfully verified MFA and received tokens.");
+      return response.AuthenticationResult;
+    }
+    // This case should ideally not be reached if the code is correct
+    throw new Error("MFA verification failed, no tokens returned.");
+  } catch (error) {
+    console.error("Cognito MFA challenge error:", error);
+    throw new Error(error.message || "An error occurred during MFA verification.");
   }
 }
 
@@ -138,5 +184,83 @@ export async function confirmSignUp(username, confirmationCode) {
   } catch (error) {
     console.error("Cognito confirmation error:", error);
     throw new Error(error.message || "An error occurred during confirmation.");
+  }
+}
+
+/**
+ * Begins the process of associating a software token for MFA.
+ * @param {string} accessToken - The user's access token.
+ * @returns {Promise<object>} The response from Cognito, containing the SecretCode.
+ */
+export async function associateSoftwareToken(accessToken) {
+  const command = new AssociateSoftwareTokenCommand({
+    AccessToken: accessToken,
+  });
+
+  try {
+    const response = await client.send(command);
+    return response;
+  } catch (error) {
+    console.error("Cognito associate software token error:", error);
+    throw new Error(error.message || "Failed to start MFA setup.");
+  }
+}
+
+/**
+ * Verifies the software token and enables MFA.
+ * @param {string} accessToken - The user's access token.
+ * @param {string} userCode - The code from the authenticator app.
+ * @returns {Promise<object>} The response from Cognito.
+ */
+export async function verifySoftwareToken(accessToken, userCode) {
+  const command = new VerifySoftwareTokenCommand({
+    AccessToken: accessToken,
+    UserCode: userCode,
+  });
+
+  try {
+    const response = await client.send(command);
+    return response;
+  } catch (error) {
+    console.error("Cognito verify software token error:", error);
+    throw new Error(error.message || "Failed to verify MFA code.");
+  }
+}
+
+/**
+ * Updates the user's MFA preference (enables or disables TOTP).
+ * @param {string} accessToken - The user's access token.
+ * @param {object} settings - The settings to apply, e.g., { Enabled: true, PreferredMfa: true }.
+ * @returns {Promise<object>} The response from Cognito.
+ */
+export async function updateMfaPreference(accessToken, settings) {
+  const command = new SetUserMFAPreferenceCommand({
+    AccessToken: accessToken,
+    SoftwareTokenMfaSettings: settings,
+  });
+
+  try {
+    const response = await client.send(command);
+    console.log("Successfully updated MFA preference.", response);
+    return response;
+  } catch (error) {
+    console.error("Cognito update MFA preference error:", error);
+    throw new Error(error.message || "Failed to update MFA preference.");
+  }
+}
+
+/**
+ * Fetches the current user's details using their access token.
+ * @param {string} accessToken - The user's access token.
+ * @returns {Promise<object>} The user object from Cognito.
+ */
+export async function getUser(accessToken) {
+  const command = new GetUserCommand({ AccessToken: accessToken });
+  try {
+    const response = await client.send(command);
+    return response;
+  } catch (error) {
+    console.error("Cognito get user error:", error);
+    throw new Error(error.message || "Failed to fetch user details.");
   }
 }
