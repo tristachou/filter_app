@@ -27,9 +27,9 @@ async def upload_filter(user_claims: Dict = Depends(get_current_user), file: Upl
 
     user_id = user_claims.get("sub")
     user_groups = user_claims.get("cognito:groups", [])
-
+    print(user_groups)
     # Determine S3 path and metadata based on user role
-    if "admin" in user_groups:
+    if "admins" in user_groups:
         object_key = f"filters/public/{uuid.uuid4()}.cube"
         filter_type = "default"
         owner_id = None
