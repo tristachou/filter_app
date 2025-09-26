@@ -243,6 +243,48 @@ p { color: var(--text-secondary); line-height: 1.5; }
 #login-form input:focus, #signup-form input:focus, #confirm-form input:focus { border-color: var(--accent-color); outline: none; }
 #login-form .btn-primary, #signup-form .btn-primary, #confirm-form .btn-primary { margin-top: 8px; }
 
+.divider {
+    margin: 24px 0;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    position: relative;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background-color: var(--border-color);
+}
+
+.divider::before {
+    left: 0;
+}
+
+.divider::after {
+    right: 0;
+}
+
+.btn-google {
+    background-color: #FFFFFF;
+    color: #333333;
+    border: 1px solid var(--border-color);
+    width: 100%;
+}
+
+.btn-google:hover {
+    background-color: #f5f5f5;
+}
+
+.btn-google .google-icon {
+    margin-right: 12px;
+}
+
 /* ======================================================================== */
 /* 5. Main App Components                                                */
 /* ======================================================================== */
