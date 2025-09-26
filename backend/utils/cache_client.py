@@ -8,8 +8,9 @@ from typing import Optional, Any
 
 # Get the Memcached endpoint from an environment variable
 # Example: 'your-elasticache-endpoint.xxxxxx.cfg.aps1.cache.amazonaws.com:11211'
-MEMCACHED_ENDPOINT = os.getenv("MEMCACHED_ENDPOINT")
 
+#MEMCACHED_ENDPOINT = os.getenv("MEMCACHED_ENDPOINT")
+MEMCACHED_ENDPOINT = None
 memcache_client = None
 if MEMCACHED_ENDPOINT:
     print(f"Connecting to Memcached at: {MEMCACHED_ENDPOINT}")
