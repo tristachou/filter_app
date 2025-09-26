@@ -12,7 +12,6 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)]
 )
 
-PEXELS_API_KEY = os.getenv("PEXELS_API_KEY")
 PEXELS_PHOTOS_URL = "https://api.pexels.com/v1/search"
 PEXELS_VIDEOS_URL = "https://api.pexels.com/videos/search"
 
@@ -20,18 +19,26 @@ class SearchType(str, Enum):
     PHOTOS = "photos"
     VIDEOS = "videos"
 
-@router.get("/search")
-async def search_pexels(query: str = Query(..., min_length=1), search_type: SearchType = Query(SearchType.PHOTOS)):
-    """
-    Searches for photos or videos on Pexels based on a query and type.
-    """
-    if not PEXELS_API_KEY:
+def get_pexels_api_key():
+    """Dependency to get the Pexels API key from environment variables."""
+    pexels_api_key = os.getenv("PEXELS_API_KEY")
+    if not pexels_api_key:
         raise HTTPException(
             status_code=500,
             detail="Pexels API key is not configured on the server.",
         )
+    return pexels_api_key
 
-    headers = {"Authorization": PEXELS_API_KEY}
+@router.get("/search")
+async def search_pexels(
+    query: str = Query(..., min_length=1), 
+    search_type: SearchType = Query(SearchType.PHOTOS),
+    api_key: str = Depends(get_pexels_api_key)
+):
+    """
+    Searches for photos or videos on Pexels based on a query and type.
+    """
+    headers = {"Authorization": api_key}
     params = {"query": query, "per_page": 15}
 
     if search_type == SearchType.VIDEOS:

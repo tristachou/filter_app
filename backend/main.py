@@ -40,7 +40,7 @@ api_v1_router = APIRouter(prefix="/api/v1")
 api_v1_router.include_router(auth.router)
 api_v1_router.include_router(media.router)
 api_v1_router.include_router(filters.router)
-api_v1_router.include_router(pexels.router, prefix="/pexels", tags=["pexels"])
+api_v1_router.include_router(pexels.router)
 
 
 # Manually add the process route to bypass the router object
