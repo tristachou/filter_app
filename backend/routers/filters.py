@@ -8,6 +8,7 @@ from routers.auth import get_current_user
 # Import the new DynamoDB-based functions
 from utils.database import add_filter_item, get_filters_for_user, get_filter_by_id
 from utils.s3_client import upload_file_to_s3
+from utils.cache_client import get_from_cache, set_to_cache
 
 # --- Router --- #
 router = APIRouter(
@@ -61,14 +62,25 @@ async def list_available_filters(
     limit: int = Query(10, ge=1, le=100, description="Number of items per page")
 ):
     """
-    Retrieves a paginated list of filters available to the current user from DynamoDB.
+    Retrieves a paginated list of filters available to the current user.
+    This endpoint uses a cache-aside strategy to reduce database load.
     """
     user_id = user_claims.get("sub")
-    
-    # Get all filters available to this user from DynamoDB
-    all_user_filters = get_filters_for_user(user_id)
+    cache_key = f"filters_list_{user_id}"
 
-    # --- Pagination Logic (remains the same) ---
+    # 1. Try to get the full list of filters from cache
+    all_user_filters = get_from_cache(cache_key)
+
+    if all_user_filters is not None:
+        print("CACHE HIT!")
+    else:
+        print("CACHE MISS!")
+        # Cache Miss: Data not in cache, get from DB
+        all_user_filters = get_filters_for_user(user_id)
+        # Save the full list to cache for 60 seconds
+        set_to_cache(cache_key, all_user_filters, expire=60)
+
+    # --- Pagination Logic (applied after getting the full list) ---
     total_items = len(all_user_filters)
     start_index = (page - 1) * limit
     end_index = start_index + limit
