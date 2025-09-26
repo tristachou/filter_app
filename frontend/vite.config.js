@@ -7,19 +7,11 @@ export default defineConfig({
   server: {
     // This is crucial for Docker
     host: '0.0.0.0', 
+    port: 5173,
     allowedHosts: [
-      'ec2-52-63-176-232.ap-southeast-2.compute.amazonaws.com',
+      'ec2-3-107-90-126.ap-southeast-2.compute.amazonaws.com',
       'filterapp.cab432.com',
     ],
-    port: 5173,
-    // Configure the reverse proxy
-    proxy: {
-      // Requests to /api will be sent to the backend
-      '/api': {
-        target: 'http://backend:8000',
-        changeOrigin: true,
-        secure: false,
-      }
-    }
+    // The proxy section is removed because Nginx is handling all routing.
   }
 })
