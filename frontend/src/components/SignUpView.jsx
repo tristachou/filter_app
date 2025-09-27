@@ -16,7 +16,14 @@ function SignUpView({ onSignUpSuccess, showLogin }) {
       // On success, call the callback passed from App.jsx to switch views
       onSignUpSuccess(username);
     } catch (err) {
-      setError(err.message);
+      // Special handling for email limit exception to allow admin confirmation
+      if (err.name === 'LimitExceededException' || err.message.includes('Exceeded daily email limit')) {
+        console.warn('Cognito email limit reached. Proceeding to confirmation view for manual admin confirmation.');
+        alert('Cognito email limit reached. Proceeding to confirmation view for manual admin confirmation.'); // Display alert to the user
+        onSignUpSuccess(username); // Proceed as if sign-up was successful
+      } else {
+        setError(err.message);
+      }
     }
   };
 

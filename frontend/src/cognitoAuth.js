@@ -160,7 +160,8 @@ export async function signUp(username, password, email) {
     return response;
   } catch (error) {
     console.error("Cognito sign-up error:", error);
-    throw new Error(error.message || "An error occurred during sign-up.");
+    // Re-throw the original error object to preserve its name and other properties
+    throw error;
   }
 }
 
