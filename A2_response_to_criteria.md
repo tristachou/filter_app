@@ -13,10 +13,10 @@ Instructions
 Overview
 ------------------------------------------------
 
-- **Name:** [Your Name Here]
+- **Name:** Hsin-Yu Chou
 - **Student number:** N11696630
 - **Partner name (if applicable):** N11789701
-- **Application name:** SimpleGrading Filter App
+- **Application name:** Web Filter App
 - **Two line description:** A web application that allows users to upload their media (images/videos) or discover images from Pexels, and then apply professional color grading filters (LUTs) to them.
 - **EC2 instance name or ID:** i-0db71af932bc596a7
 
@@ -127,10 +127,12 @@ Overview
 
 ### Cognito groups
 
-- **How are groups used to set permissions?:**
-- **Video timestamp:**03:36:05-05:05:18
+- **How are groups used to set permissions?:** Cognito Groups control filter visibility. Users in the `admin` group can upload 'public' filters, which are visible to all users. Other users can only upload 'private' filters, visible only to themselves. The backend API enforces this by checking the group claim in the user's JWT upon filter upload.
+- **Video timestamp:** 03:36:05-05:05:18
 - **Relevant files:**
-    -
+    - backend/routers/filters.py
+    - backend/utils/cognito_auth.py
+    - backend/models/schemas.py
 
 ### Core - DNS with Route53
 
@@ -162,11 +164,13 @@ Overview
 
 ### Infrastructure as code
 
-- **Technology used:** Docker
-- **Services deployed:** The application is containerized using Docker. The `docker-compose.yml` file defines the multi-container setup, including the frontend, backend, and an Nginx web server. The `build-and-push.sh` script suggests a CI/CD process for building and pushing container images to a registry.
+- **Technology used:** CloudFormation
+- **Services deployed:** CloudFormation (infra_core.yaml) deploys two DynamoDB tables, a Cognito User Pool+App Client, SSM Parameters, and a Secrets Manager secret—each tagged with qut-username/qut-username2 for partner access. VPC/EC2/ElastiCache are excluded due to CAB432 account denies, but this still meets the IaC requirement for new services. One-command deploy/teardown (deploy.sh/destroy.sh) and the app uses Cognito for registration, (email confirmation when quota allows), and JWT login.
 - **Video timestamp:**
 - **Relevant files:**
     - infra.yaml
+    - deploy.sh
+    - destory.sh
 
 ### Other (with prior approval only)
 
