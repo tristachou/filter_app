@@ -1,0 +1,168 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "CAB432 core IaC - DynamoDB x2, Cognito, SSM Parameters, Secrets with QUT tags (PITR optional)"
+
+Parameters:
+  QutUsername:
+    Type: String
+    Description: Primary owner username (e.g., n11789701@qut.edu.au)
+  QutUsername2:
+    Type: String
+    Description: Partner username (e.g., n11696630@qut.edu.au)
+  EnvName:
+    Type: String
+    Default: dev
+  FilterTableName:
+    Type: String
+    Default: n11789701-filter_items
+    Description: Unique table name for filter_items
+  MediaTableName:
+    Type: String
+    Default: n11789701-media_items
+    Description: Unique table name for media_items
+  EnablePITR:
+    Type: String
+    AllowedValues: ["true","false"]
+    Default: "false"
+    Description: Enable DynamoDB Point-in-Time Recovery (may be blocked in CAB432)
+
+Conditions:
+  PITREnabled: !Equals [ !Ref EnablePITR, "true" ]
+
+Resources:
+  # ---------------- DynamoDB tables ----------------
+  FilterItemsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref FilterTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+      
+      PointInTimeRecoverySpecification: !If
+        - PITREnabled
+        - { PointInTimeRecoveryEnabled: true }
+        - !Ref "AWS::NoValue"
+      Tags:
+        - { Key: qut-username,  Value: !Ref QutUsername }
+        - { Key: qut-username2, Value: !Ref QutUsername2 }
+        - { Key: app-table,     Value: filter_items }
+
+  MediaItemsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref MediaTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification: !If
+        - PITREnabled
+        - { PointInTimeRecoveryEnabled: true }
+        - !Ref "AWS::NoValue"
+      Tags:
+        - { Key: qut-username,  Value: !Ref QutUsername }
+        - { Key: qut-username2, Value: !Ref QutUsername2 }
+        - { Key: app-table,     Value: media_items }
+
+  # ---------------- Cognito ----------------
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: cab432-user-pool
+      AutoVerifiedAttributes: [ email ]
+      AliasAttributes: [ email ]
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+      UserPoolTags:
+        qut-username: !Ref QutUsername
+        qut-username2: !Ref QutUsername2
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+
+  # ---------------- SSM Parameter Store ----------------
+  ParamEnv:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /app/env
+      Type: String
+      Value: !Ref EnvName
+      Tags:
+        qut-username: !Ref QutUsername
+        qut-username2: !Ref QutUsername2
+
+  ParamMediaTable:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /app/dynamodb/media_table
+      Type: String
+      Value: !Ref MediaItemsTable
+      Tags:
+        qut-username: !Ref QutUsername
+        qut-username2: !Ref QutUsername2
+
+  ParamFilterTable:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /app/dynamodb/filter_table
+      Type: String
+      Value: !Ref FilterItemsTable
+      Tags:
+        qut-username: !Ref QutUsername
+        qut-username2: !Ref QutUsername2
+
+  ParamUserPoolId:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /app/cognito/user_pool_id
+      Type: String
+      Value: !Ref UserPool
+      Tags:
+        qut-username: !Ref QutUsername
+        qut-username2: !Ref QutUsername2
+
+  ParamUserPoolClientId:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /app/cognito/user_pool_client_id
+      Type: String
+      Value: !Ref UserPoolClient
+      Tags:
+        qut-username: !Ref QutUsername
+        qut-username2: !Ref QutUsername2
+
+  # ---------------- Secrets Manager ----------------
+  ExternalApiSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: /app/secret/external_api
+      GenerateSecretString:
+        ExcludePunctuation: true
+      Tags:
+        - { Key: qut-username,  Value: !Ref QutUsername }
+        - { Key: qut-username2, Value: !Ref QutUsername2 }
+
+Outputs:
+  FilterItemsTableName: { Value: !Ref FilterItemsTable }
+  MediaItemsTableName:  { Value: !Ref MediaItemsTable }
+  UserPoolId:           { Value: !Ref UserPool }
+  UserPoolClientId:     { Value: !Ref UserPoolClient }
