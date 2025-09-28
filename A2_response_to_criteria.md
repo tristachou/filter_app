@@ -83,7 +83,7 @@ Overview
 
 - **What data is stored within your application that is not stored in cloud data services?:** Temporary files during media processing. For example, an uploaded file might be temporarily stored on the application server's local disk before it is processed and uploaded to S3.
 - **Why is this data not considered persistent state?:** These are intermediate, ephemeral files. If the application instance were to stop, these files can be safely lost because they can be regenerated from the original source file. They are not the source of truth.
-- **How does your application ensure data consistency if the app suddenly stops?:** The application likely follows atomic operation patterns. For instance, a new media record is created in DynamoDB only *after* the corresponding file has been successfully uploaded to S3. If the process fails midway, no inconsistent data is left behind, and the client can safely retry the operation.
+- **How does your application ensure data consistency if the app suddenly stops?:** The application likely follows atomic operation patterns. For instance, a new media record is created in DynamoDB only after the corresponding file has been successfully uploaded to S3. If the process fails midway, no inconsistent data is left behind, and the client can safely retry the operation.
 - **Relevant files:**
     - backend/services/process_media.py
     - backend/routers/media.py
