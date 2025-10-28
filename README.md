@@ -138,7 +138,6 @@ aws sso login
 # Get login password and pipe it to Docker login
 aws ecr get-login-password --region <your-aws-region> | docker login --username AWS --password-stdin <your-aws-account-id>.dkr.ecr.<your-aws-region>.amazonaws.com
 
-aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com
 
 ```
 *Replace `<your-aws-region>` and `<your-aws-account-id>` with your specific details.*
@@ -172,17 +171,9 @@ The provided script builds multi-platform images and pushes them to ECR.
     ```bash
     nano .env
     ```
-    Paste your production secrets (e.g., `SECRET_KEY`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`).
-    新增的非同步流程需要以下額外設定：
-    ```env
-    AWS_REGION=ap-southeast-2
-    S3_BUCKET_NAME=your-media-bucket-name
-    PROCESSING_QUEUE_URL=https://sqs.ap-southeast-2.amazonaws.com/<account-id>/filter-processing-queue
-    WORKER_POLL_WAIT_SECONDS=5  # 可選，調整 worker 長輪詢間隔
-    ```
-    > 請先在 AWS 建立好 S3 Bucket（儲存原始與處理後媒體）以及 SQS Queue（處理工作排程），並確保 EC2 上的 IAM/憑證擁有讀寫這些資源的權限。另需建立 `processing_jobs` DynamoDB table 或在 `infra.yaml` 中擴充。
+    
 
-4.  **Create / 更新 `docker-compose.prod.yml` 檔**：
+4.  **Create / `docker-compose.prod.yml` **：
     This file pulls the images from ECR.
     ```bash
     nano docker-compose.prod.yml
@@ -230,7 +221,7 @@ services:
       - frontend
     ```
 
-    上述 `processor-worker` service 會在同一份 backend image 中啟動 `python worker_main.py`，負責接收 SQS 任務並執行 FFmpeg。若你將 worker 拆成獨立的 ECR image，記得調整這裡的 `image` 與 `command`。
+    
 
 ### Step 5: Launch the Application on EC2
 
