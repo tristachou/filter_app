@@ -1,39 +1,51 @@
 # Web Filter App
 
-## Project Overview
+## Architecture Overview
 
-This is a full-stack web application that allows users to upload images and videos, apply custom filters (Look-Up Tables - LUTs), and download the processed media. It features a user authentication system, integration with the Pexels API for sourcing images, and a personal media library for each user.
+This is a cloud-native, full-stack web application designed for applying visual filters to images and videos. It uses a decoupled architecture to ensure scalability and efficient handling of CPU-intensive tasks.
 
-The entire application is containerized with Docker for consistent development and production environments.
+The system is composed of three core services:
+-   **Frontend**: A React single-page application providing the user interface for media uploads, filter selection, and library management.
+-   **Backend**: A Python FastAPI server that manages user authentication, API requests, media metadata, and dispatches processing jobs to a queue.
+-   **Media Worker**: A dedicated, containerized Python worker that performs the CPU-intensive filter application.
+
+This application is designed for and deployed on AWS:
+-   The **Frontend** and **Backend** services are hosted on an **AWS EC2** instance.
+-   The **Media Worker** is deployed as a container managed via **Amazon ECR**. It automatically scales based on demand.
+-   Communication between the backend and the worker is handled by **AWS SQS (Simple Queue Service)**. The backend places jobs in a queue, and the workers use long-polling to fetch and process them.
 
 ## Features
 
 -   **User Authentication**: Secure JWT-based login and session management.
--   **Media Upload**: Supports common image (JPG, PNG) and video (MP4, MOV) formats.
--   **LUT Filter Application**: Apply `.cube` LUT filters to uploaded media using `ffmpeg`.
--   **Pexels API Integration**: Search for and import high-quality images directly from Pexels.
--   **Personal Media Library**: View, download, and manage your uploaded and processed files.
--   **Containerized**: Fully containerized with Docker and Docker Compose for easy setup.
--   **RESTful API**: A well-defined FastAPI backend serving a modern React frontend.
+-   **Cloud-Native Architecture**: Decoupled services using SQS for resilient, scalable processing.
+-   **Auto-Scaling Workers**: The media processing workers in ECR scale automatically to handle fluctuating loads.
+-   **Media Upload & Filtering**: Supports common image and video formats and applies `.cube` LUT filters.
+-   **Pexels API Integration**: Search and import high-quality images directly from Pexels.
+-   **Personal Media Library**: View, download, and manage your media files.
 
 ## Tech Stack
 
--   **Backend**: Python, FastAPI
 -   **Frontend**: JavaScript, React, Vite
--   **Web Server/Proxy**: Nginx
+-   **Backend**: Python, FastAPI
+-   **Worker**: Python
+-   **Queueing**: AWS SQS
 -   **Containerization**: Docker, Docker Compose
--   **Deployment**: AWS ECR (Elastic Container Registry)
+-   **Cloud Hosting**: AWS EC2, AWS ECR
+-   **Web Server**: Nginx
 
 ## Project Structure
 
+The repository is organized into the three main components of the application:
+
 ```
 .
-├── backend/         # FastAPI application, API logic, and media processing
+├── backend/         # FastAPI application, API logic, and SQS message dispatching
 ├── frontend/        # React + Vite user interface
-├── nginx/           # Nginx configuration and Dockerfile
-├── build-and-push.sh # Script to build and push Docker images to AWS ECR
+├── media_worker/    # Asynchronous worker for consuming SQS messages and processing media
+├── nginx/           # Nginx configuration for reverse proxy
+├── infra.yaml       # Infrastructure-as-Code template (e.g., CloudFormation, CDK)
 ├── docker-compose.yml      # Docker Compose for LOCAL development
-└── docker-compose.prod.yml # Docker Compose for PRODUCTION deployment
+└── ... and other configuration files
 ```
 
 ---
