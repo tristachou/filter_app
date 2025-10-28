@@ -114,13 +114,20 @@ function AppView({ handleLogout }) {
         media_id: uploadResponse.data.id,
         filter_id: filterId,
       });
-      const downloadResponse = await apiClient.get(`/media/download/${processResponse.data.processed_media_id}`, {
-        responseType: 'blob',
-      });
-      const blobUrl = URL.createObjectURL(downloadResponse.data);
-      setDownloadUrl(blobUrl);
-      setProcessedFilename(processResponse.data.processed_filename);
-      setUiState('complete');
+      const taskId = processResponse.data.task_id;
+      console.log(`Processing initiated. Task ID: ${taskId}`);
+      alert(`Processing initiated. You will be notified when it's complete. Task ID: ${taskId}`);
+
+      // We can't immediately download. The UI should reflect "processing in background"
+      // For now, we'll reset to file_selected or a new 'pending' state.
+      // A more complete solution would involve polling a status endpoint or WebSockets.
+      setUiState('file_selected'); // Or a new state like 'processing_pending'
+      // Clear current file selection to allow new uploads
+      setCurrentFile(null);
+      const fileInput = document.getElementById('file-input');
+      if (fileInput) fileInput.value = '';
+
+      handleOpenLibrary(); // Open library to show newly processed item
     } catch (error) {
       alert(`An error occurred during processing: ${error.response?.data?.detail || error.message}`);
       setUiState('file_selected');

@@ -9,8 +9,9 @@ export default defineConfig({
     host: '0.0.0.0', 
     port: 5173,
     allowedHosts: [
-      'ec2-3-107-90-126.ap-southeast-2.compute.amazonaws.com',
-      'filterapp.cab432.com',
+      'n11696630-696058442.ap-southeast-2.elb.amazonaws.com',
+      'ec2-54-79-172-183.ap-southeast-2.compute.amazonaws.com',
+      'webfilterapp.cab432.com',
     ],
     // The proxy section is removed because Nginx is handling all routing.
   }

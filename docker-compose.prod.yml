@@ -21,3 +21,9 @@ services:
     depends_on:
       - backend
       - frontend
+
+  media_worker: # New service for the media processing worker
+    image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-worker:latest
+    env_file:
+      - ./.env # Worker also needs SQS_QUEUE_URL, S3_BUCKET_NAME, AWS_REGION, LUT_DIRECTORY
+    restart: always

@@ -42,5 +42,4 @@ class ProcessRequest(BaseModel):
 
 class ProcessResponse(BaseModel):
     message: str
-    processed_media_id: UUID
-    processed_filename: str
+    task_id: str # Changed to task_id

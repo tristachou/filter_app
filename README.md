@@ -137,6 +137,9 @@ aws sso login
 
 # Get login password and pipe it to Docker login
 aws ecr get-login-password --region <your-aws-region> | docker login --username AWS --password-stdin <your-aws-account-id>.dkr.ecr.<your-aws-region>.amazonaws.com
+
+aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com
+
 ```
 *Replace `<your-aws-region>` and `<your-aws-account-id>` with your specific details.*
 
@@ -170,8 +173,16 @@ The provided script builds multi-platform images and pushes them to ECR.
     nano .env
     ```
     Paste your production secrets (e.g., `SECRET_KEY`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`).
+    新增的非同步流程需要以下額外設定：
+    ```env
+    AWS_REGION=ap-southeast-2
+    S3_BUCKET_NAME=your-media-bucket-name
+    PROCESSING_QUEUE_URL=https://sqs.ap-southeast-2.amazonaws.com/<account-id>/filter-processing-queue
+    WORKER_POLL_WAIT_SECONDS=5  # 可選，調整 worker 長輪詢間隔
+    ```
+    > 請先在 AWS 建立好 S3 Bucket（儲存原始與處理後媒體）以及 SQS Queue（處理工作排程），並確保 EC2 上的 IAM/憑證擁有讀寫這些資源的權限。另需建立 `processing_jobs` DynamoDB table 或在 `infra.yaml` 中擴充。
 
-4.  **Create the `docker-compose.prod.yml` file**:
+4.  **Create / 更新 `docker-compose.prod.yml` 檔**：
     This file pulls the images from ECR.
     ```bash
     nano docker-compose.prod.yml
@@ -182,26 +193,44 @@ The provided script builds multi-platform images and pushes them to ECR.
     # docker-compose.prod.yml 
     version: '3.8'
 
-    services:
-      backend:
-        image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-backend:latest
-        env_file:
-          - ./.env
-        restart: always
+services:
+  backend:
+    image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-backend:latest
+    env_file:
+      - ./.env
+    environment:
+      USE_FAKE_SQS: "false"
+      USE_FAKE_PROCESSING_JOBS: "false"
+    restart: always
 
-      frontend:
-        image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-frontend:latest
-        restart: always
+  processor-worker:
+    image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-backend:latest
+    command: ["python", "worker_main.py"]
+    env_file:
+      - ./.env
+    environment:
+      USE_FAKE_SQS: "false"
+      USE_FAKE_PROCESSING_JOBS: "false"
+    depends_on:
+      - backend
+    restart: always
+
+  frontend:
+    image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-frontend:latest
+    restart: always
 
       nginx:
         image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-nginx:latest
-        ports:
-          - "80:80" 
-        restart: always
-        depends_on:
-          - backend
-          - frontend
+    ports:
+      - "80:80" 
+    restart: always
+    depends_on:
+      - backend
+      - processor-worker
+      - frontend
     ```
+
+    上述 `processor-worker` service 會在同一份 backend image 中啟動 `python worker_main.py`，負責接收 SQS 任務並執行 FFmpeg。若你將 worker 拆成獨立的 ECR image，記得調整這裡的 `image` 與 `command`。
 
 ### Step 5: Launch the Application on EC2
 
@@ -212,7 +241,7 @@ The provided script builds multi-platform images and pushes them to ECR.
 
 2.  **Start the services**:
     ```bash
-    docker-compose -f docker-compose.prod.yml up -d
+    docker-compose -f docker-compose.prod.yml up -d --build
     ```
 
 3.  **Access and Verify**:
@@ -223,6 +252,14 @@ The provided script builds multi-platform images and pushes them to ECR.
 
     You can check the logs to ensure everything is running correctly:
     ```bash
-    # Check logs for a specific service (e.g., backend)
+    # Backend API 日誌
     docker-compose -f docker-compose.prod.yml logs -f backend
+
+    # Worker 任務處理日誌
+    docker-compose -f docker-compose.prod.yml logs -f processor-worker
     ```
+
+
+docker-compose -f docker-compose.prod.yml down --remove-orphans
+docker system prune -f
+docker-compose -f docker-compose.prod.yml up -d --build

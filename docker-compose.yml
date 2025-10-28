@@ -20,3 +20,13 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+
+  media_worker: # New service for local development of the media processing worker
+    build: ./media_worker # Build from the media_worker directory
+    env_file:
+      - ./.env # Worker also needs SQS_QUEUE_URL, S3_BUCKET_NAME, AWS_REGION, LUT_DIRECTORY
+    volumes:
+      - ./media_worker:/app # Mount worker code for live changes
+      - ./backend/assets/luts:/app/assets/luts # Mount LUTs for the worker
+    # No ports needed
+    # No depends_on needed
