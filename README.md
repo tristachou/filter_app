@@ -32,6 +32,9 @@ A scalable web application that enables users to upload media or discover images
 
 ## Architecture
 
+<img width="1190" height="493" alt="image" src="https://github.com/user-attachments/assets/e3443f6a-f3c3-4c17-88f0-a4031e96f10d" />
+
+
 ### Architecture Diagram
 
 ```
