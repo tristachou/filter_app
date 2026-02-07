@@ -330,11 +330,6 @@ docker-compose up --build
 
 ---
 
-## Technical Documentation
-
-For detailed architecture decisions, scaling strategies, security implementations, and sustainability considerations, refer to the [Full Technical Report](./CAB432_A3_Report_finalFinal-2.pdf).
-
----
 
 ## License
 
