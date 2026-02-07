@@ -1,6 +1,7 @@
-# Color Grading Web Application
+<h1 align="center"> Color Grading Web Application<h1>
 
 <div align="center">
+
 
 ![Project Banner](https://img.shields.io/badge/AWS-Cloud_Native-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-Production-success?style=for-the-badge)
