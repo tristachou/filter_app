@@ -35,58 +35,6 @@ A scalable web application that enables users to upload media or discover images
 <img width="1190" height="493" alt="image" src="https://github.com/user-attachments/assets/e3443f6a-f3c3-4c17-88f0-a4031e96f10d" />
 
 
-### Architecture Diagram
-
-```
-┌─────────────┐
-│  Route 53   │  ← DNS with health checks
-└──────┬──────┘
-       │
-┌──────▼──────────────────┐
-│ Application Load        │  ← HTTPS termination (ACM)
-│ Balancer                │
-└──────┬──────────────────┘
-       │
-┌──────▼──────────────────┐
-│  EC2 Instance           │
-│  ┌──────────────────┐   │
-│  │ Nginx (Routing)  │   │  ← Path-based routing
-│  ├──────────────────┤   │
-│  │ React Frontend   │   │  ← SPA
-│  ├──────────────────┤   │
-│  │ FastAPI Backend  │   │  ← REST API + JWT validation
-│  └──────────────────┘   │
-└──────┬──────────────────┘
-       │
-       ├────────────────────────────┐
-       │                            │
-┌──────▼──────┐            ┌────────▼────────┐
-│ Amazon SQS  │            │  Amazon S3      │  ← Pre-signed URLs
-│ (Job Queue) │            │  (Media Store)  │     Multipart upload
-└──────┬──────┘            └─────────────────┘
-       │                            ▲
-┌──────▼──────────────┐             │
-│ ECS on Fargate      │             │
-│ ┌────────────────┐  │             │
-│ │ Worker Task 1  │──┼─────────────┘
-│ ├────────────────┤  │
-│ │ Worker Task 2  │  │  ← FFmpeg + LUT processing
-│ ├────────────────┤  │     Auto-scales based on:
-│ │ Worker Task N  │  │     - Queue length
-│ └────────────────┘  │     - CPU utilization
-└─────────────────────┘
-       │
-┌──────▼──────────────┐
-│ DynamoDB            │  ← Job metadata & state
-│ + ElastiCache       │  ← Filter names cache
-└─────────────────────┘
-       │
-┌──────▼──────────────┐
-│ CloudWatch          │  ← Monitoring & custom metrics
-│ + Lambda            │  ← S3 event triggers
-└─────────────────────┘
-```
-
 ### Microservices Architecture
 
 **1. Web/API Service (EC2)**
