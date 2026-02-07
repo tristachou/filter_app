@@ -1,4 +1,4 @@
-# Professional Color Grading Web Application
+# Color Grading Web Application
 
 <div align="center">
 
