@@ -1,268 +1,349 @@
-# Web Filter App
+# Professional Color Grading Web Application
 
-## Architecture Overview
+<div align="center">
 
-This is a cloud-native, full-stack web application designed for applying visual filters to images and videos. It uses a decoupled architecture to ensure scalability and efficient handling of CPU-intensive tasks.
+![Project Banner](https://img.shields.io/badge/AWS-Cloud_Native-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Production-success?style=for-the-badge)
+![Architecture](https://img.shields.io/badge/Architecture-Microservices-blue?style=for-the-badge)
 
-The system is composed of three core services:
--   **Frontend**: A React single-page application providing the user interface for media uploads, filter selection, and library management.
--   **Backend**: A Python FastAPI server that manages user authentication, API requests, media metadata, and dispatches processing jobs to a queue.
--   **Media Worker**: A dedicated, containerized Python worker that performs the CPU-intensive filter application.
+**A production-grade, cloud-native web application for applying professional color grading filters (LUTs) to images and videos**
 
-This application is designed for and deployed on AWS:
--   The **Frontend** and **Backend** services are hosted on an **AWS EC2** instance.
--   The **Media Worker** is deployed as a container managed via **Amazon ECR**. It automatically scales based on demand.
--   Communication between the backend and the worker is handled by **AWS SQS (Simple Queue Service)**. The backend places jobs in a queue, and the workers use long-polling to fetch and process them.
+[Live Demo](https://webfilterapp.cab432.com) • [Architecture](#architecture) • [Tech Stack](#tech-stack)
 
-## Features
+</div>
 
--   **User Authentication**: Secure JWT-based login and session management.
--   **Cloud-Native Architecture**: Decoupled services using SQS for resilient, scalable processing.
--   **Auto-Scaling Workers**: The media processing workers in ECR scale automatically to handle fluctuating loads.
--   **Media Upload & Filtering**: Supports common image and video formats and applies `.cube` LUT filters.
--   **Pexels API Integration**: Search and import high-quality images directly from Pexels.
--   **Personal Media Library**: View, download, and manage your media files.
+---
+
+## Overview
+
+A scalable web application that enables users to upload media or discover images from Pexels, then apply professional-grade color grading filters. Built with a microservices architecture on AWS, featuring auto-scaling workers, serverless functions, and comprehensive monitoring.
+
+### Key Features
+
+- **Professional Color Grading** - Apply industry-standard LUT filters to images and videos
+- **Secure Authentication** - AWS Cognito with MFA and Google sign-in
+- **Pexels Integration** - Search and import high-quality stock images
+- **Asynchronous Processing** - Queue-based architecture for CPU-intensive tasks
+- **Auto-Scaling** - Dynamic worker scaling based on queue depth and CPU metrics
+- **Real-time Monitoring** - Custom CloudWatch metrics and dashboards
+- **Production-Ready** - HTTPS, load balancing, and health checks
+
+---
+
+## Architecture
+
+### Architecture Diagram
+
+```
+┌─────────────┐
+│  Route 53   │  ← DNS with health checks
+└──────┬──────┘
+       │
+┌──────▼──────────────────┐
+│ Application Load        │  ← HTTPS termination (ACM)
+│ Balancer                │
+└──────┬──────────────────┘
+       │
+┌──────▼──────────────────┐
+│  EC2 Instance           │
+│  ┌──────────────────┐   │
+│  │ Nginx (Routing)  │   │  ← Path-based routing
+│  ├──────────────────┤   │
+│  │ React Frontend   │   │  ← SPA
+│  ├──────────────────┤   │
+│  │ FastAPI Backend  │   │  ← REST API + JWT validation
+│  └──────────────────┘   │
+└──────┬──────────────────┘
+       │
+       ├────────────────────────────┐
+       │                            │
+┌──────▼──────┐            ┌────────▼────────┐
+│ Amazon SQS  │            │  Amazon S3      │  ← Pre-signed URLs
+│ (Job Queue) │            │  (Media Store)  │     Multipart upload
+└──────┬──────┘            └─────────────────┘
+       │                            ▲
+┌──────▼──────────────┐             │
+│ ECS on Fargate      │             │
+│ ┌────────────────┐  │             │
+│ │ Worker Task 1  │──┼─────────────┘
+│ ├────────────────┤  │
+│ │ Worker Task 2  │  │  ← FFmpeg + LUT processing
+│ ├────────────────┤  │     Auto-scales based on:
+│ │ Worker Task N  │  │     - Queue length
+│ └────────────────┘  │     - CPU utilization
+└─────────────────────┘
+       │
+┌──────▼──────────────┐
+│ DynamoDB            │  ← Job metadata & state
+│ + ElastiCache       │  ← Filter names cache
+└─────────────────────┘
+       │
+┌──────▼──────────────┐
+│ CloudWatch          │  ← Monitoring & custom metrics
+│ + Lambda            │  ← S3 event triggers
+└─────────────────────┘
+```
+
+### Microservices Architecture
+
+**1. Web/API Service (EC2)**
+- **Frontend**: React SPA with Vite
+- **Backend**: FastAPI REST API
+- **Routing**: Nginx (path-based: `/` → frontend, `/api` → backend)
+- **Responsibilities**:
+  - User authentication (JWT validation)
+  - Media metadata management
+  - Job creation and status tracking
+  - Pexels API integration
+
+**2. Media Processing Service (ECS Fargate)**
+- **Workers**: Containerized Python workers
+- **Processing**: FFmpeg with LUT color grading
+- **Communication**: SQS long-polling
+- **Scaling**: Auto-scales based on queue metrics
+
+**3. Serverless Monitoring (Lambda)**
+- **Triggers**: S3 upload/download events
+- **Metrics**: Custom CloudWatch metrics for queue length
+- **Auto-scaling**: Triggers ECS task scaling based on thresholds
+
+### Data Flow
+
+1. **Upload** → User uploads media directly to S3 via pre-signed URLs
+2. **Job Creation** → Backend creates job record in DynamoDB and enqueues to SQS
+3. **Processing** → ECS workers poll SQS, process media with FFmpeg, upload results to S3
+4. **Status Updates** → Workers update DynamoDB; users poll for status (cached in ElastiCache)
+5. **Download** → Users download processed media directly from S3 via pre-signed URLs
+
+---
 
 ## Tech Stack
 
--   **Frontend**: JavaScript, React, Vite
--   **Backend**: Python, FastAPI
--   **Worker**: Python
--   **Queueing**: AWS SQS
--   **Containerization**: Docker, Docker Compose
--   **Cloud Hosting**: AWS EC2, AWS ECR
--   **Web Server**: Nginx
+### Frontend
+- **Framework**: React 18 with Vite
+- **Language**: JavaScript/JSX
+- **Build Tool**: Vite (fast HMR)
+
+### Backend
+- **Framework**: FastAPI (Python)
+- **Authentication**: JWT validation (AWS Cognito tokens)
+- **API Documentation**: Auto-generated OpenAPI/Swagger
+
+### Worker Service
+- **Runtime**: Python
+- **Media Processing**: FFmpeg with LUT filters
+- **Queue**: AWS SQS long-polling
+
+### Infrastructure (AWS)
+- **Compute**: 
+  - EC2 (t3.medium) for web/API
+  - ECS on Fargate for workers
+- **Storage**: S3 (media files)
+- **Database**: DynamoDB (on-demand, job metadata)
+- **Cache**: ElastiCache for Memcached
+- **Queue**: SQS (job distribution)
+- **Auth**: Cognito (MFA + Google federated sign-in)
+- **Load Balancing**: Application Load Balancer
+- **DNS**: Route 53 with health checks
+- **Monitoring**: CloudWatch + Lambda
+- **Serverless**: Lambda (S3 event processing)
+- **Security**: ACM (SSL/TLS certificates), Secrets Manager
+
+### DevOps
+- **Containerization**: Docker, Docker Compose
+- **Registry**: Amazon ECR
+- **Orchestration**: Amazon ECS
+- **Web Server**: Nginx (reverse proxy)
+
+---
+
+## Key Technical Features
+
+### 1. **Auto-Scaling Architecture**
+- **ECS Workers**: Scale based on custom CloudWatch metrics
+- **Trigger**: Queue length ≥ 10 → scale out; < 3 → scale in
+- **CPU-Based**: Additional scaling based on worker CPU utilization
+- **Lambda Integration**: S3 events trigger metric updates for real-time scaling
+
+### 2. **Optimized Media Handling**
+- **Direct S3 Access**: Pre-signed URLs bypass API server for uploads/downloads
+- **Multipart Upload**: Large file support with resumable uploads
+- **Range Requests**: Stream specific byte ranges for efficient delivery
+
+### 3. **High Availability**
+- **Load Balancer**: Application Load Balancer with health checks
+- **Auto-Recovery**: Route 53 health checks remove unhealthy instances
+- **HTTPS**: ACM-managed certificates with automatic renewal
+- **Domain**: Custom domain with HTTPS (webfilterapp.cab432.com)
+
+### 4. **Security**
+- **Authentication**: AWS Cognito with MFA and Google OAuth
+- **Authorization**: JWT-based API access control
+- **Network**: Private subnets for workers, security groups
+- **Secrets**: AWS Secrets Manager for sensitive credentials
+- **TLS**: End-to-end encryption with HTTPS
+
+### 5. **Monitoring & Observability**
+- **Custom Metrics**: Queue length, processing time, success rates
+- **CloudWatch Logs**: Centralized logging for all services
+- **Alarms**: Automated alerts for scaling and failures
+- **Dashboard**: Real-time system health visualization
+
+---
 
 ## Project Structure
 
-The repository is organized into the three main components of the application:
-
 ```
 .
-├── backend/         # FastAPI application, API logic, and SQS message dispatching
-├── frontend/        # React + Vite user interface
-├── media_worker/    # Asynchronous worker for consuming SQS messages and processing media
-├── nginx/           # Nginx configuration for reverse proxy
-├── infra.yaml       # Infrastructure-as-Code template (e.g., CloudFormation, CDK)
-├── docker-compose.yml      # Docker Compose for LOCAL development
-└── ... and other configuration files
+├── backend/              # FastAPI application
+│   ├── main.py          # API routes and business logic
+│   ├── worker_main.py   # SQS message dispatcher
+│   └── requirements.txt
+├── frontend/            # React + Vite SPA
+│   ├── src/
+│   └── package.json
+├── media_worker/        # ECS worker service
+│   ├── worker.py        # FFmpeg + LUT processing
+│   ├── Dockerfile
+│   └── requirements.txt
+├── nginx/               # Reverse proxy config
+│   └── nginx.conf
+├── docker-compose.yml          # Local development
+├── docker-compose.prod.yml     # Production deployment
+└── build-and-push.sh          # ECR image deployment
 ```
 
 ---
 
-## Local Development Setup
+## Deployment
 
-Use this method to run the application on your local machine.
+### Production Architecture
+- **Region**: ap-southeast-2 (Sydney)
+- **Domain**: webfilterapp.cab432.com
+- **SSL**: ACM Certificate (ID: 4850c62c-26d1-41d6-a260-9aab925c3452)
+- **Compute**: 
+  - EC2 Instance: i-0db71af932bc596a7
+  - ECS Cluster: n11696630
+- **Container Registry**: ECR (3 repositories: frontend, backend, nginx)
 
-### Method 1
-
-**Prerequisites:**
-- Docker & Docker Compose
-
-**Steps:**
-
-1.  **Create Environment File**:
-    Copy the example environment file. The default values are suitable for local development.
-    ```bash
-    cp .env.example .env
-    ```
-
-2.  **Build and Run Containers**:
-    From the project root directory, run:
-    ```bash
-    docker-compose up --build
-    ```
-    The first build may take a few minutes.
-
-3.  **Access the Application**:
-    -   **Frontend**: `http://localhost:5173`
-    -   **Backend API**: `http://localhost:8000`
-    -   **API Docs (Swagger UI)**: `http://localhost:8000/docs`
-
-
-### Method 2: Running Services Manually (for Development)
-
-Follow these steps to run each service in a separate terminal.
-
-#### Running the Backend
-
-1.  **Navigate to the backend directory**:
-    ```bash
-    cd backend
-    ```
-2.  **Create and activate a virtual environment**:
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows: .venv\Scripts\activate
-    ```
-3.  **Install dependencies**:
-    ```bash
-    pip install -r requirements.txt
-    ```
-4.  **Set environment variables**:
-    The backend requires the environment variables defined in the `.env` file at the project root. You can either load them into your shell manually or run the server from the root directory. The simplest way is to ensure the `.env` file exists at the project root.
-
-5.  **Run the FastAPI server**:
-    ```bash
-    uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-    ```
-
-#### Running the Frontend
-
-1.  **Navigate to the frontend directory** (in a new terminal):
-    ```bash
-    cd frontend
-    ```
-2.  **Install dependencies**:
-    ```bash
-    npm install
-    ```
-3.  **Run the Vite development server**:
-    ```bash
-    npm run dev
-    ```
-    The frontend will be accessible at `http://localhost:5173`.
+### Infrastructure Components
+- **Load Balancer**: n11696630 (Application Load Balancer)
+- **Auto Scaling**: ECS Service auto-scaling based on custom metrics
+- **Queue**: SQS queue for job distribution
+- **Lambda**: S3 event processor for metrics
 
 ---
 
-## Production Deployment on AWS
+## Cost Optimization
 
-This guide outlines how to deploy the application to an AWS EC2 instance using Docker and AWS ECR.
+**Estimated Monthly Cost**: ~$168/month for ~50 concurrent users
 
-### Step 1: Prerequisites
+### Cost Breakdown
+- **Compute**: EC2 ($40) + ECS Fargate ($34) = $74
+- **Storage**: S3 ($15) + DynamoDB ($15) = $30
+- **Network**: ALB ($18) + ElastiCache ($15) = $33
+- **Monitoring**: CloudWatch ($5)
+- **Other**: Route 53, SQS, ACM (~$1)
 
--   An AWS account.
--   **AWS CLI** installed and configured on your local machine.
--   **Docker** installed on your local machine and on the EC2 server.
--   Three **AWS ECR repositories** created with the following names:
-    -   `filter-app-backend`
-    -   `filter-app-frontend`
-    -   `filter-app-nginx`
+### Optimization Strategies
+- On-demand DynamoDB pricing for variable load
+- Auto-scaling workers (only run when needed)
+- S3 Lifecycle policies for archival
+- ElastiCache for reduced database reads
+- Pre-signed URLs for direct S3 access (no egress through EC2)
 
-### Step 2: Log in to AWS ECR
+---
 
-On your **local machine**, authenticate the Docker CLI with your Amazon ECR registry.
+## Sustainability Considerations
+
+1. **Efficient Resource Usage**
+   - Cache-first architecture (Memcached → DynamoDB → S3)
+   - Right-sized compute instances
+   - Auto-scaling based on actual demand
+
+2. **Optimized Data Transfer**
+   - Pre-signed URLs for direct S3 access
+   - WebP/AVIF for images, optimized video encoding
+   - Range requests for partial file downloads
+
+3. **Lifecycle Management**
+   - S3 Lifecycle policies for archival
+   - DynamoDB TTL for stale data
+   - Automated cleanup of unused resources
+
+---
+
+## Security Features
+
+- **Authentication**: Cognito with MFA and Google federated sign-in
+- **Authorization**: JWT-based access control
+- **Network Security**: Private subnets, security groups, NACLs
+- **Data Encryption**: TLS in transit, S3 server-side encryption
+- **Secrets Management**: AWS Secrets Manager
+- **Least Privilege**: IAM roles with minimal permissions
+- **HTTPS Only**: ACM-managed certificates
+
+---
+
+## Performance Metrics
+
+- **Auto-Scaling**: Queue length ≥ 10 triggers scale-out
+- **Worker Efficiency**: ~60% average CPU utilization
+- **Cache Hit Ratio**: Optimized with ElastiCache
+- **API Response Time**: Sub-second for cached reads
+- **Processing Throughput**: ~100 jobs/day with auto-scaling
+
+---
+
+## Local Development
 
 ```bash
-# Log in to AWS (e.g., using SSO)
-aws sso login
+# Clone repository
+git clone <repository-url>
+cd filter-app
 
-# Get login password and pipe it to Docker login
-aws ecr get-login-password --region <your-aws-region> | docker login --username AWS --password-stdin <your-aws-account-id>.dkr.ecr.<your-aws-region>.amazonaws.com
+# Create environment file
+cp .env.example .env
 
+# Start all services with Docker Compose
+docker-compose up --build
 
+# Access the application
+# Frontend: http://localhost:5173
+# Backend API: http://localhost:8000
+# API Docs: http://localhost:8000/docs
 ```
-*Replace `<your-aws-region>` and `<your-aws-account-id>` with your specific details.*
 
-### Step 3: Build and Push Docker Images
+---
 
-The provided script builds multi-platform images and pushes them to ECR.
+## Key Achievements
 
-1.  **Verify Script**: Ensure the AWS Account ID and region in `build-and-push.sh` match yours.
-2.  **Run the Script**:
-    ```bash
-    chmod +x build-and-push.sh
-    ./build-and-push.sh
-    ```
-    This will build and push the `backend`, `frontend`, and `nginx` images to your ECR repositories.
+- Microservices Architecture - Decoupled, scalable services
+- Container Orchestration - ECS with Fargate
+- Auto-Scaling - Custom CloudWatch metrics + Lambda
+- Load Distribution - Application Load Balancer
+- Serverless Functions - Lambda for S3 event processing
+- Communication Mechanisms - SQS for async processing
+- HTTPS & Custom Domain - Production-ready security
+- High Availability - Health checks and auto-recovery
+- Cost Optimization - Right-sized resources, caching strategy
 
-### Step 4: Server-Side Setup (on EC2)
+---
 
-1.  **Connect to your EC2 instance**:
-    ```bash
-    ssh -i /path/to/your-key.pem ubuntu@<your-ec2-ip>
-    ```
+## Technical Documentation
 
-2.  **Create a project directory**:
-    ```bash
-    mkdir filter-app && cd filter-app
-    ```
+For detailed architecture decisions, scaling strategies, security implementations, and sustainability considerations, refer to the [Full Technical Report](./CAB432_A3_Report_finalFinal-2.pdf).
 
-3.  **Create the `.env` file**:
-    Create a `.env` file with your production environment variables.
-    ```bash
-    nano .env
-    ```
-    
+---
 
-4.  **Create / `docker-compose.prod.yml` **：
-    This file pulls the images from ECR.
-    ```bash
-    nano docker-compose.prod.yml
-    ```
-    Paste the following content into the file. **Remember to replace the AWS Account ID and region with your own.**
+## License
 
-    ```yaml
-    # docker-compose.prod.yml 
-    version: '3.8'
+This project was developed as part of CAB432 Cloud Computing coursework.
 
-services:
-  backend:
-    image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-backend:latest
-    env_file:
-      - ./.env
-    environment:
-      USE_FAKE_SQS: "false"
-      USE_FAKE_PROCESSING_JOBS: "false"
-    restart: always
+---
 
-  processor-worker:
-    image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-backend:latest
-    command: ["python", "worker_main.py"]
-    env_file:
-      - ./.env
-    environment:
-      USE_FAKE_SQS: "false"
-      USE_FAKE_PROCESSING_JOBS: "false"
-    depends_on:
-      - backend
-    restart: always
+<div align="center">
 
-  frontend:
-    image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-frontend:latest
-    restart: always
+**Built with AWS Cloud**
 
-      nginx:
-        image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/filter-app-nginx:latest
-    ports:
-      - "80:80" 
-    restart: always
-    depends_on:
-      - backend
-      - processor-worker
-      - frontend
-    ```
-
-    
-
-### Step 5: Launch the Application on EC2
-
-1.  **Pull the latest images**:
-    ```bash
-    docker-compose -f docker-compose.prod.yml pull
-    ```
-
-2.  **Start the services**:
-    ```bash
-    docker-compose -f docker-compose.prod.yml up -d --build
-    ```
-
-3.  **Access and Verify**:
-    The application should now be accessible via your EC2 instance's public IP address on port 80. Nginx serves the frontend and forwards API requests to the backend.
-
-    - **Application URL**: `http://<your-ec2-ip>`
-    - **API Docs URL**: `http://<your-ec2-ip>/docs`
-
-    You can check the logs to ensure everything is running correctly:
-    ```bash
-    # Backend API 日誌
-    docker-compose -f docker-compose.prod.yml logs -f backend
-
-    # Worker 任務處理日誌
-    docker-compose -f docker-compose.prod.yml logs -f processor-worker
-    ```
-
-
-docker-compose -f docker-compose.prod.yml down --remove-orphans
-docker system prune -f
-docker-compose -f docker-compose.prod.yml up -d --build
+</div>
