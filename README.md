@@ -9,7 +9,7 @@
 
 **A production-grade, cloud-native web application for applying professional color grading filters (LUTs) to images and videos**
 
-[Live Demo]([https://www.youtube.com/watch?v=NTQvsEpdMys]) • [Architecture](#architecture) • [Tech Stack](#tech-stack)
+[Live Demo](https://www.youtube.com/watch?v=NTQvsEpdMys) • [Architecture](#architecture) • [Tech Stack](#tech-stack)
 
 </div>
 
